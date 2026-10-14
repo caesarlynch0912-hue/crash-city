@@ -28,10 +28,11 @@ for(const id of NEW){G=load();G.garage.owned.push(id);G.garage.sel=id;G.prog.up.
   G.keys.KeyW=true;let bad=0,top=0;for(let i=0;i<900;i++){G.tick();top=Math.max(top,c.v);if(!fin(c.x)||!fin(c.y)||!fin(c.v)||!fin(c.a))bad++;if(G.state!=='play')break;}
   G.keys.KeyW=false;ok(bad===0,id+' drives 900 ticks without NaN (top v '+top.toFixed(2)+', hp '+Math.round(c.hp)+')');
   ok(top<=c.spec.speed*G.PROG_MUL.speed+3.01,id+' respects speed spec+upgrade');}
-// score unlock
-G=load();G.resetRun();G.score=16500;for(let i=0;i<120;i++)G.tick();
+// score unlock (fresh save: earlier checks push cars into owned and later code may persist them)
+const snap=Object.assign({},store);for(const k in store)delete store[k];G=load();G.resetRun();G.score=16500;for(let i=0;i<120;i++)G.tick();
 ok(['sopa','mc','monstert'].every(id=>G.garage.owned.includes(id)),'cars up to 16 000 unlock by score ('+G.garage.owned.join(',')+')');
 ok(!G.garage.owned.includes('stridsv'),'tank not unlocked at 16 500');
+for(const k in store)delete store[k];Object.assign(store,snap);
 // --- 2. civilians in the new vehicles can be car-jacked and keep their spec + upgrades
 G=load();G.prog.up.armor=2;G.progCalc();G.resetRun();
 let cv=G.makeCar(G.player.x+200,G.player.y,0,'civ');G.cars.push(cv);cv.spec=undefined;G.mxMorph(cv);
