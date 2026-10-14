@@ -1,0 +1,78 @@
+# Handoff: Crash City (formerly "Harbor Heat")
+
+Current version: **1.6** (on `main`; the in-game `VERSION` constant and menu footer still say 1.4). Everything below is what a new agent needs to continue without re-reading the old conversation.
+
+Repo: `https://github.com/caesarlynch0912-hue/crash-city`. `main` holds the game (`index.html`) plus these notes and tools. The `claude-handoff` branch is the original 1.4 handoff snapshot (older game copies, Electron stub); it is history now and not needed for new work.
+
+## 1. The user and how to work with them
+
+- Swedish teenager/student, writes short casual Swedish ("bror", "fixa", typos). **Reply in Swedish.** Keep explanations plain; they care about results, not internals.
+- Works on a **school laptop** (Windows 11 Education, user `ad87546`, AMD Ryzen 3 7335U with integrated GPU, 16 GB RAM). Performance matters: this machine is weak.
+- **School network DNS (`edudns1.stockholm.se`) cannot resolve `*.frame.claudeusercontent.com`**, so the claude.ai artifact link does not load for them at school. Always also deliver a standalone `.html` file via SendUserFile. cdnjs, jsdelivr and fonts.cdnfonts.com ARE reachable.
+- They play in the standalone file or in the app's Browser pane (localhost preview). Their saves live in that origin's localStorage (best score ~13 934, many cars owned, wallet ~272 coins).
+- Request history, in order: copy a GTA browser game (refused: copyright; built an original instead) → 2D top-down game → 3D → better graphics → survival chase instead of missions → sound/engine/garage/solid buildings → weapons + "fun stuff" → bigger map, biomes, slower/realistic cars → cleaner menus → easier unlocks, more cars, more power-ups → character fix, skins menu, car-jack animation, challenges → a game-feel design doc was implemented and then **reverted on request** ("ta bort allt från senaste prompten", that state was named 1.1) → rename to Crash City + Pricedown font → English version, power-up text must not block the view, coins instead of cash, coin counter, bug hunt with 10k–50k test runs → clean HUD, more/shinier coins, language picker (7 languages) shown at startup, better character, lower top speed on best cars, more police from more directions, Shift nitro → **blocky (not rounded) characters + fix lag** (1.4, done).
+- Besides this 1.4 handoff, versions 1.4–1.6 were pushed to `main` from the user's GitHub account; 1.6 adds over 1.4: Shift = drift (bonus points), Space = nitro in the car / jump on foot, V = punch; police roadblocks from 2 stars; more and faster hunters per wanted star; wrecks explode a moment later and can chain; ploughing through civilian traffic keeps momentum; top cars cost much more score (7 000 → 100 000) and the golden key only unlocks cars up to 10 000; fixed-step interpolation and frame-rate-independent camera smoothing.
+- They also work on a second Windows 11 PC (user `caesa`), where the repo lives at `C:\Users\caesa\Projects\crash-city`.
+- The user has not asked to publish code anywhere beyond this GitHub repo.
+
+## 2. Files in this folder
+
+| Path | What it is |
+|---|---|
+| `index.html` | **The single source of truth.** One complete HTML file (doctype/head/body included), no build system. Edit it directly; it is also the standalone file to send the user (copy it to `Crash-City-vX.Y.html` for delivery). |
+| `README.md` | Short Swedish description of the game. |
+| `.claude/launch.json` | Preview server config `crash-city` (node one-liner on port 5177 serving `index.html`). Start with `preview_start name=crash-city`. Same port as before, so localhost saves carry over. |
+| `tools/fuzz.js` | Parallel fuzz tester (worker_threads). `node tools/fuzz.js index.html <perWorker> <workers>`. ~13 scenarios/s per 7 workers. |
+| `tools/sim2.js` | Wall-collision + ram test + garage unlock test. |
+| `tools/sim4.js` | 10-min combat simulation (all weapons, ramps, heli, military). |
+| `tools/sim9.js` | Car-jack phase test + challenge completion test. |
+| `tools/i18ncheck.js` + `tools/dict.js` | Checks every `tr()/trf()` key and visible Swedish text has all 6 translations and placeholders survive. `node tools/i18ncheck.js index.html`. `dict.js` is a copy of the `const DICT=` object embedded in `index.html` (regenerated from 1.6); when you add strings, update both. |
+| `tools/removed-game-feel-version.html` | The reverted "game feel" version (slip/drift model, combo bank, skid marks, speed lines, medals, settings sliders, 28 unit tests). Kept only in case the user wants pieces back. |
+
+All the `tools/*.js` scripts take the HTML file as their argument and slice the `<script>` block up to the `/* ================= 3D` marker, so they work on `index.html` as-is.
+
+**Windows pitfall (bit us twice):** the filesystem is case-insensitive. `Index.html` and `index.html` are the SAME file. Never name a deliverable anything that matches the source case-insensitively, and never `rm` such a name.
+
+Artifact: `https://claude.ai/artifact/2pisP4drM5uE4tbPeuurF2` (it was published from the old unwrapped `harbor-heat.html`, so republishing from `index.html` needs the artifact's URL passed explicitly). The CSP blocks the Pricedown stylesheet there, so the artifact falls back to Bungee.
+
+## 3. Architecture of `index.html`
+
+Plain JS + three.js r128 (UMD from cdnjs) + jsdelivr `three@0.128.0/examples/js/` (CopyShader, LuminosityHighPassShader, EffectComposer, ShaderPass, RenderPass, UnrealBloomPass, BufferGeometryUtils). Fonts: Google Fonts (Bungee, Chakra Petch) + `fonts.cdnfonts.com/css/pricedown` (`--display` = Pricedown, `--small` = Bungee for small HUD labels).
+
+Script order (important: everything before the `/* ================= 3D` marker is pure logic with no THREE, which is what the Node test harnesses slice and run):
+
+1. **i18n core** at the top: `LANGS`, `LANG` (localStorage `hh-lang`), `DICT` (Swedish key → `[en,de,fr,es,da,no]`), `PLACES`, `tr(s)`, `trf(s,{vars})`, `LOCALE()`. **The game already uses a global `T` for time, so translation is `tr`/`trf`, never `T`/`F`.** Swedish strings in code are the keys.
+2. **City data**: 14×14 grid, `CELL=480, ROAD=120, WORLD=6840`. Biomes via `biomeOf()` (downtown, suburb, park, harbor, forest, farm, beach). Every solid thing is a rect in `block.bld` (`type`: tower, house, warehouse, cont, barn, silo, bale, hut, lifeguard, fountain, water, tree, leg). `solid()`, `isRoad()`, `freeCircle()` (checks centre + 8 points), `curbPoint()`, `roadPoint()`.
+3. **Entities**: `cars`, `peds`, `coins` (trails of 5–8 along roads, 30 trails), `parts`. `player` has `nitro/nitroOn/nitroWait`, `jack` (car-jack state), `car`.
+4. Input, game state, power-ups (`POWER`, 17 + `KEYDEF` golden key, tiers at 0/600/1800/4000 pts), `fx` timers.
+5. Driving physics `drive()` (power-limited acceleration, sub-stepped movement, wall sliding, `unstick()`), civ AI on lanes, cop/army AI `updateCop()` (chases decoy, slow-mo, freeze). `spawnEnemy()` spawns head-on (35%, only after 8 s), from the sides (25%) or from behind (25%), else anywhere. `spawnRoadblock()` parks 2–3 cops across the road ahead from 2 stars (`blockT` timer, cop `block` hold). Hunter speed/acceleration rise with each star. Wanted levels: cops `[0,3,6,9,12,14]`, military after 140 s (12 cops + up to 10 army). Player drifting uses `c.ma` (travel direction) vs `c.a` (nose).
+6. Collisions, peds, `updateWorld()` (score, escalation, coins, bust/wasted).
+7. Garage (`CAR_SPECS`, 15 cars, unlocked by score, golden key (only cars with `req <= KEY_MAX_REQ` = 10 000), or bought with coins: `carPrice = req/20` rounded to 5).
+8. Combat (5 weapons, tracers, rockets, mines, barrels, heli, ramps, airtime, near-miss, drift, combos), challenges (`CHAL_DEFS`, 3 active), skins (`SKINS`, 8, unlocked by total challenges `stats.chal`), car-jacking (`enterCar` → walk/pull/enter → `takeCar`).
+9. `endRun`, `showOver`, `resetRun`, `tick()` (fixed 60 Hz).
+10. **3D**: renderer, quality tiers (`QUAL`, `applyQuality`, `autoQuality`, setting `hh-gfx` auto/high/low), bloom composer, sky/env, static world batched per material+chunk (`addStatic`/`flushStatic`, non-indexed merge), buildings, cars (`buildCar`, door pivot, LOD hides details beyond 520), people (`buildPed`, `buildHero` both **blocky boxes**, `poseHero`/`animPed`), instanced coins and barrels, power-up/combat visuals.
+11. Minimap, HUD (`renderHud`), notices (`notify()`; big `toast(...,true)` only for KÖR/BUSTED/WASTED), audio (all synthesized WebAudio, radio sequencer), garage/skins/settings/language screens, menu system (`SCREENS`, `showScreen`, `backScreen`, pause), frame loop (`acc` capped at 4 ticks; `snapPrev`/`lerpIn`/`lerpOut` draw cars, peds and the player between the last two 60 Hz steps, and `updateCamera(fk)` smooths per real frame time).
+
+localStorage keys: `hh-lang, hh-best, hh-garage, hh-coins, hh-stats, hh-skin, hh-mute, hh-radio, hh-gfx`.
+
+## 4. Testing status
+
+- Fuzz totals across sessions: 21 000 + 2 100 + 10 500 + 2 100 scenarios (~10 M ticks). Last two runs: **0 failures**. Bugs it found and that are fixed: player pushed into walls by cars, player exiting into a 6×6 tree (fixed by checking the centre in `freeCircle` + `unstickPlayer()` on exit), particle overshoot (hard cap 700 at end of tick).
+- 1.6 on `main` (2026-10-14): `sim4` crashed in `collide()` because crash damage can wreck the player's car (clearing `player.car`) before the civilian-shove code read `player.car.a`; fixed by using the colliding car. After the fix: sim2 0 overlaps, sim4 clean, sim9 OK, fuzz 2 100 scenarios 0 failures, i18ncheck only the 4 intentional misses.
+- Perf in the 1046×682 preview window: one frame 5.5 ms (was 9 ms), 2 396 objects (was 3 947), 2 lights (was 8). Not yet measured on the user's real full-screen machine.
+- `tools/i18ncheck.js` reports 4 "missing" that are intentional (JS-overwritten placeholders and the multilingual eyebrow on the language screen).
+- The Browser pane often throttles rAF when hidden; use JS to call `renderHud()/renderSkinPreview()` before screenshots, and expect very low FPS there.
+
+## 5. Open items / likely next asks
+
+- Ask the user whether 1.6 still stutters on their machine (1.6's interpolation may already have fixed it); if yes, next levers: fewer visible peds/cars, cheaper buildings, `Grafik: Låg` default, smaller lamp pools, InstancedMesh for peds.
+- `stats.chal` may show 30 because of an earlier test that may not have been fully restored. Offer to reset if the user says it is wrong.
+- The Electron `.exe` idea from early on is paused (they said "skapa inte den än").
+- Pricedown could be inlined as a data-URI font to work in the artifact and offline. Check Typodermic's licence and ask the user first.
+- Possible offline build: inline three.js (~600 KB) so no CDN is needed.
+
+- The in-game version label still says 1.4 (`const VERSION` and the start-screen footer); bump it when the user next asks for a release.
+
+## 6. Git note
+
+The project lives on GitHub (`caesarlynch0912-hue/crash-city`, default branch `main`). Commit on `main` unless the user asks for a branch, and only push when the user says so.

@@ -871,7 +871,8 @@ function collide(){
       if(imp>2){const mult=o=>o.kind==='army'?3:1;damage(a,imp*2.2*mult(b)*(a.kind==='army'?.4:1));damage(b,imp*2.2*mult(a)*(b.kind==='army'?.4:1));
         burst((a.x+b.x)/2,(a.y+b.y)/2,'#ffd27a',10,3);
         if(a===player.car||b===player.car){shake=Math.max(shake,imp*.8);sfx('crash',a.x,a.y,imp/10);const o=a===player.car?b:a;if(o.kind==='civ'&&o.ai)o.stun=2;}}
-      if(civHit){const o=pa?b:a,pc=player.car,side=Math.sign(Math.cos(pc.a)*(o.y-pc.y)-Math.sin(pc.a)*(o.x-pc.x))||1;
+      // The crash damage above can wreck the player's car and clear player.car, so use the colliding car itself.
+      if(civHit){const o=pa?b:a,pc=pa?a:b,side=Math.sign(Math.cos(pc.a)*(o.y-pc.y)-Math.sin(pc.a)*(o.x-pc.x))||1;
         o.x-=Math.sin(pc.a)*side*7;o.y+=Math.cos(pc.a)*side*7;o.a+=side*.12;o.v*=.4;if(o.ai)o.stun=Math.max(o.stun,1.5);
         if(!(o.bumpT>T)){pc.v*=.93;o.bumpT=T+.6;}}else{a.v*=.7;b.v*=.7;}}}}
   for(const c of cars)if(!c.ai||c.stun>0)unstick(c);
