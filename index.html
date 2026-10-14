@@ -1236,7 +1236,7 @@ function updateWorld(){
     if(!military&&runT>=140&&MODE==='survival'){military=true;toast(tr('MILITÄREN'),'#9bd05a',tr('Pansarfordon på väg'),2.4);sfx('military');}
     checkUnlocks();updateChals();if(player.car){chal('dist',Math.abs(player.car.v)*1e-4);chal('speed',Math.abs(player.car.v)*21.6);}chal('time',runT);
     for(const k in fx)if(fx[k]>0)fx[k]=Math.max(0,fx[k]-DT);
-    addScore(DT*(6+wanted*5+(military?20:0)));
+    addScore(DT*(3+wanted*3+(military?10:0)));
     powerT-=DT;if(powerT<=0){powerT=3.5;if(powerups.length<8)spawnPower();}
   }
   const cops=cars.filter(c=>c.kind==='cop'&&c.hp>0),army=cars.filter(c=>c.kind==='army'&&c.hp>0);
@@ -1342,8 +1342,10 @@ function switchW(dir){const own=ownedW();if(own.length<2)return;let i=own.indexO
 function selectW(n){const w=WEAPONS[n];if(w&&arsenal[w.id]>0){wIdx=n;sfx('click');}}
 function pushFeed(text,col){feed.unshift({text,col,t:2.6});if(feed.length>4)feed.length=4;}
 function los(x0,y0,x1,y1){const d=dist(x0,y0,x1,y1),n=Math.ceil(d/18);for(let i=1;i<n;i++){const t=i/n;if(solid(x0+(x1-x0)*t,y0+(y1-y0)*t))return false;}return true;}
-function onWreck(c){modeWreck(c);wrecks++;combo=comboT>0?combo+1:1;comboT=4;chal('wreck',1);chal('combo',combo);const base=c.kind==='army'?400:150,mult=fx.x2>0?2:1;addScore(base*combo);
-  pushFeed((c.kind==='army'?tr('PANSAR KVADDAT'):tr('POLISBIL KVADDAD'))+' +'+fmtScore(base*combo*mult)+(combo>1?'  ×'+combo:''),c.kind==='army'?'#9bd05a':'#6aa8ff');}
+// The combo counter keeps climbing (for challenges), but the score multiplier stops at ×COMBO_MAX so long chains can't explode the score.
+const COMBO_MAX=4;
+function onWreck(c){modeWreck(c);wrecks++;combo=comboT>0?combo+1:1;comboT=4;chal('wreck',1);chal('combo',combo);const base=c.kind==='army'?300:120,mult=fx.x2>0?2:1,cm=Math.min(combo,COMBO_MAX);addScore(base*cm);
+  pushFeed((c.kind==='army'?tr('PANSAR KVADDAT'):tr('POLISBIL KVADDAD'))+' +'+fmtScore(base*cm*mult)+(combo>1?'  ×'+cm:''),c.kind==='army'?'#9bd05a':'#6aa8ff');}
 function aimAt(ox,oy,base){let best=null,bd=.3;
   for(const c of cars){if(!isEnemy(c)||c.hp<=0)continue;const d=dist(ox,oy,c.x,c.y);if(d>650)continue;const da=Math.abs(angDiff(Math.atan2(c.y-oy,c.x-ox),base));if(da<bd&&los(ox,oy,c.x,c.y)){bd=da;best=c;}}
   if(heli&&heli.hp>0&&!heli.falling){const d=dist(ox,oy,heli.x,heli.y),da=Math.abs(angDiff(Math.atan2(heli.y-oy,heli.x-ox),base));if(d<750&&da<.4&&(!best||da<bd))return{a:Math.atan2(heli.y-oy,heli.x-ox),heli:true,d};}
@@ -1415,7 +1417,7 @@ function updateAir(c){if(c.z===undefined){c.z=0;c.vz=0;c.air=false;}
   if(c.air){c.vz-=.2;c.z+=c.vz;
     if(c.z<=gh){const at=T-(c.airStart||T),hard=-c.vz;c.z=gh;c.air=false;c.vz=0;if(hard>2&&typeof vfxDust==='function')vfxDust(c.x,c.y,Math.min(14,Math.round(hard*3)),gh);
       if(c===player.car){shake=Math.max(shake,3+Math.min(9,hard*1.4));sfx('land');if(at>.9)lwCheer();
-        if(at>.35&&state==='play'){chal('air',at);const pts=Math.round(at*400);addScore(pts);pushFeed(tr('LUFTTID')+' '+at.toFixed(1)+' s +'+fmtScore(pts*(fx.x2>0?2:1)),'#7dffa8');}}}}
+        if(at>.35&&state==='play'){chal('air',at);const pts=Math.round(at*180);addScore(pts);pushFeed(tr('LUFTTID')+' '+at.toFixed(1)+' s +'+fmtScore(pts*(fx.x2>0?2:1)),'#7dffa8');}}}}
   else{const climb=gh-c.z;c.z=gh;if(climb>.5&&gh>5&&Math.abs(c.v)>3.4){c.air=true;c.vz=1.4+Math.abs(c.v)*.34;c.airStart=T;}}}
 function updateCombat(){
   fireCD-=DT;hornCD-=DT;if(muzzle>0)muzzle-=DT;if(flash>0)flash=Math.max(0,flash-DT*3);
@@ -1519,14 +1521,18 @@ let skinId='std';try{const s=localStorage.getItem('hh-skin');if(s&&SKINS.some(k=
 function saveStats(){try{localStorage.setItem('hh-stats',JSON.stringify(stats));}catch(e){}}
 /* ---------- Battle Pass ---------- */
 // Unlocked by reaching 10 000 points in one run. From then on every point scored fills the pass; each tier pays coins or a skin.
-const BP_UNLOCK=10000,BP_STEP=4000,BP_COINS={2:100,4:150,6:200,8:250,10:300,11:500};
+// Tiers get dearer as you go (tier n costs BP_BASE + (n-1)*BP_GROW), so the whole pass takes several good runs.
+const BP_UNLOCK=10000,BP_BASE=8000,BP_GROW=2000,BP_COINS={2:100,4:150,6:200,8:250,10:300,11:500};
+const BP_STEP_AT=t=>BP_BASE+t*BP_GROW;// cost of going from tier t to t+1
 const BP_TIERS=Array.from({length:12},(_,i)=>{const s=SKINS.find(k=>k.bp===i+1);return s?{skin:s.id}:{coins:BP_COINS[i+1]};});
 let bp={on:false,xp:0,tier:0};
 try{const s=JSON.parse(localStorage.getItem('hh-bp')||'null');if(s&&typeof s.xp==='number')bp={on:!!s.on,xp:Math.max(0,Math.floor(s.xp)||0),tier:clamp(Math.floor(s.tier)||0,0,BP_TIERS.length)};}catch(e){}
 if(!bp.on&&best>=BP_UNLOCK)bp.on=true;
 let bpCounted=0;// points of the current run already added to the pass
 function saveBP(){try{localStorage.setItem('hh-bp',JSON.stringify(bp));}catch(e){}}
-const bpXPFor=n=>n*BP_STEP;
+const bpXPFor=n=>n*BP_BASE+BP_GROW*n*(n-1)/2;// total xp needed to reach tier n
+// Saves from before the price change keep the tiers they earned.
+if(bp.xp<bpXPFor(bp.tier))bp.xp=bpXPFor(bp.tier);
 function bpRewardText(t){return t.skin?tr(SKINS.find(s=>s.id===t.skin).name):'+'+fmtScore(t.coins)+' '+tr('mynt');}
 function updateBP(){if(state!=='play')return;const sc=Math.floor(score);
   if(!bp.on){if(sc<BP_UNLOCK)return;bp.on=true;bpCounted=BP_UNLOCK;saveBP();toast(tr('BATTLE PASS UPPLÅST!'),'#ffd23f',tr('Varje poäng fyller nu passet'),2.6);sfx('key');}
@@ -3751,9 +3757,9 @@ setTimeout(()=>{const f=$('lang-'+LANG);if(f)f.focus();},60);
 /* ---------- Battle Pass screen ---------- */
 function renderBP(){const max=BP_TIERS.length,done=bp.tier>=max;
   $('bpLevel').textContent=trf('Nivå {n} / {m}',{n:bp.tier,m:max});
-  const into=bp.xp-bpXPFor(bp.tier);$('bpFill').style.width=(!bp.on?0:done?100:clamp(into/BP_STEP*100,0,100))+'%';
+  const into=bp.xp-bpXPFor(bp.tier),step=BP_STEP_AT(bp.tier);$('bpFill').style.width=(!bp.on?0:done?100:clamp(into/step*100,0,100))+'%';
   $('bpSub').textContent=!bp.on?trf('Nå {p} poäng i en jakt för att låsa upp passet. Ditt rekord: {b} p.',{p:fmtScore(BP_UNLOCK),b:fmtScore(best)})
-    :done?tr('Passet är klart! Du har låst upp allt.'):trf('{a} / {b} p till nästa nivå. Varje poäng du tar i jakterna fyller passet.',{a:fmtScore(into),b:fmtScore(BP_STEP)});
+    :done?tr('Passet är klart! Du har låst upp allt.'):trf('{a} / {b} p till nästa nivå. Varje poäng du tar i jakterna fyller passet.',{a:fmtScore(into),b:fmtScore(step)});
   const L=$('bpTrack');L.innerHTML='';
   BP_TIERS.forEach((t,i)=>{const n=i+1,got=bp.on&&bp.tier>=n,next=bp.on&&bp.tier===i,sk=t.skin&&SKINS.find(s=>s.id===t.skin);
     const b=document.createElement(sk?'button':'div');if(sk)b.type='button';b.className='bpt'+(got?' got':next?' next':' locked');
@@ -3957,7 +3963,7 @@ function fxReward(kind,amount,label){const box=document.getElementById('coinbox'
     if(bp.on){
       const max=BP_TIERS.length,t0=fxRun.on?fxRun.tier:0,x0=fxRun.on?fxRun.xp:0,gain=Math.max(0,bp.xp-x0);
       const lvl=document.getElementById('fxBpLvl'),xpEl=document.getElementById('fxBpXp'),fill=document.getElementById('fxBpFill');
-      const frac=(xp,t)=>t>=max?100:clamp((xp-bpXPFor(t))/BP_STEP*100,0,100);
+      const frac=(xp,t)=>t>=max?100:clamp((xp-bpXPFor(t))/BP_STEP_AT(t)*100,0,100);
       const setLvl=n=>{lvl.textContent=trf('Nivå {n} / {m}',{n,m:max});};
       setLvl(t0);xpEl.textContent='+'+fmtScore(gain)+' p';
       fill.style.transition='none';fill.style.width=frac(x0,t0)+'%';bar.hidden=false;
