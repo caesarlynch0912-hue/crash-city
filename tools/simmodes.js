@@ -6,7 +6,7 @@ global.document={getElementById:()=>el(),createElement:()=>el(),documentElement:
 const store={};global.localStorage={getItem:k=>store[k]===undefined?null:store[k],setItem:(k,v)=>store[k]=String(v)};
 const load=()=>new Function(s+`function sfx(){} function hideScreens(){} function showBrief(){} var paused=false; var camA=0;
   return {resetRun,tick,endRun,showOver,get GM(){return GM},get MODE(){return MODE},set MODE(v){MODE=v},modeBest,get wanted(){return wanted},set wanted(v){wanted=v},get state(){return state},
-  get wallet(){return wallet},get score(){return score},get military(){return military},player,keys,cars,isEnemy,onWreck,makeCar,MODE_RAD};`)();
+  get wallet(){return wallet},get score(){return score},get military(){return military},player,keys,fx,cars,isEnemy,onWreck,makeCar,MODE_RAD};`)();
 let fails=0;const ok=(c,m)=>{console.log((c?'ok   ':'FAIL ')+m);if(!c)fails++;};
 const run=(G,n)=>{for(let i=0;i<n&&G.state==='play';i++)G.tick();};
 const park=(G,t)=>{G.player.x=t.x;G.player.y=t.y;if(G.player.car){G.player.car.x=t.x;G.player.car.y=t.y;G.player.car.v=0;}};
@@ -14,7 +14,7 @@ let G=load();
 // --- survival: unchanged (wanted rises with time, military after 140 s, no target)
 ok(G.MODE==='survival','default mode is survival');
 G.resetRun();ok(G.GM.tgt===null&&G.wanted===1,'survival: no target, 1 star');
-G.keys.KeyW=true;run(G,60*40);ok(G.wanted>=2,'survival: stars still rise with time ('+G.wanted+')');G.keys.KeyW=false;
+G.keys.KeyW=true;for(let i=0;i<60*40;i++){G.fx.ghost=9;G.fx.shield=9;G.tick();}ok(G.wanted>=2,'survival: stars still rise with time ('+G.wanted+')');G.keys.KeyW=false;
 G.endRun('busted');ok(G.modeBest.heist===0&&G.modeBest.trial===0&&G.modeBest.demo===0,'survival run leaves mode records alone');
 // --- heist
 G=load();G.MODE='heist';G.resetRun();
