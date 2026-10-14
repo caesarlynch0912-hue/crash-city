@@ -573,7 +573,7 @@ const STATION={x:2*CELL+ROAD+BS/2,y:2*CELL+ROAD+11},HOSPITAL={x:5*CELL+ROAD+BS/2
 
 function makeCar(x,y,a,kind){const army=kind==='army',van=army||(kind==='civ'&&R()<.18);
   return{x,y,a,v:0,kind,w:army?58:van?54:kind==='cop'?46:44,h:army?28:van?25:22,color:army?'#4b5a2e':kind==='cop'?'#f4f4f4':pick(CIV_COLORS),
-    hp:army?260:kind==='cop'?120:100,maxHp:army?260:kind==='cop'?120:100,ai:kind==='civ',dir:0,laneC:0,cruise:2+R()*1,
+    hp:army?260:kind==='cop'?95:60,maxHp:army?260:kind==='cop'?95:60,ai:kind==='civ',dir:0,laneC:0,cruise:2+R()*1,
     wait:0,force:0,lastI:'',stun:0,rev:0,stuck:0,van,turning:0,wheel:0};}
 function laneFor(dir,center){return dir===0?center+LANE:dir===2?center-LANE:dir===1?center-LANE:center+LANE;}
 function spawnCiv(far){for(let t=0;t<50;t++){const horiz=R()<.5,k=ri(N+1),c=k*CELL+60,along=80+R()*(WORLD-160);let x,y,dir;
@@ -717,10 +717,10 @@ function toast(text,color,sub,dur,big){if(!big){notify(text,color,sub,dur);retur
 function burst(x,y,col,n,sp,h){for(let i=0;i<n;i++){const a=R()*TAU,s=R()*sp;parts.push({x,y,h:h||8,vh:R()*2,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.4+R()*.5,max:.9,col,smoke:false});}}
 
 /* ---------- Driving ---------- */
-function carHits(c,x,y,a){const ca=Math.cos(a),sa=Math.sin(a),hw=c.w/2-2,hh=c.h/2-2;
-  for(const[u,v]of[[hw,hh],[hw,-hh],[-hw,hh],[-hw,-hh],[hw,0],[-hw,0]])if(solid(x+u*ca-v*sa,y+u*sa+v*ca))return true;return false;}
 function damage(c,d){if(c.hp<=0)return;if(c===player.car&&fx.shield>0)return;c.hp-=d;
   if(c.hp<=0){c.hp=0;c.v*=.3;burst(c.x,c.y,'#ff9a3c',40,5,14);shake=Math.max(shake,8);sfx('boom',c.x,c.y);
+    // A wreck blows up a moment later (which can chain into nearby cars), and half of them pop a second time while burning.
+    c.boomT=.12+R()*.22;c.boom2=R()<.5?1.6+R()*1.6:0;
     if(isEnemy(c)&&state==='play')onWreck(c);
     if(c===player.car)exitCar(true);}}
 // returns the shortest push that moves a point out of a building or back inside the island
@@ -928,6 +928,10 @@ function updateWorld(){
       burst(c.x,c.y,'#ffd23f',6,2,10);sfx('coin',undefined,undefined,Math.min(coinChain,8));if(!coins.some(o=>o.trail===c.trail))spawnCoinTrail(true);}
     else if(dist(c.x,c.y,player.x,player.y)>2800){const id=c.trail;for(let j=coins.length-1;j>=0;j--)if(coins[j].trail===id)coins.splice(j,1);spawnCoinTrail(true);i=Math.min(i,coins.length);}}
   for(let i=parts.length-1;i>=0;i--){const p=parts[i];p.x+=p.vx;p.y+=p.vy;p.h+=p.vh;p.vx*=.92;p.vy*=.92;if(!p.smoke){p.vh-=.15;if(p.h<1){p.h=1;p.vh*=-.3;}}p.life-=DT;if(p.life<=0)parts.splice(i,1);}
+  for(const c of cars){if(c.hp>0)continue;
+    if(c.boomT>0){c.boomT-=DT;if(c.boomT<=0)explode(c.x,c.y,130,130,'w');}
+    else if(c.boom2>0){c.boom2-=DT;if(c.boom2<=0)explode(c.x,c.y,95,85,'w');}
+    if(c.boom2>0&&R()<.35)parts.push({x:c.x+(R()-.5)*c.w*.6,y:c.y+(R()-.5)*c.h*.6,h:10,vh:.8+R()*.6,vx:(R()-.5)*.4,vy:(R()-.5)*.4,life:.5,max:.5,col:R()<.5?'#ff8a1f':'#ffd23f',smoke:false});}
   for(const c of cars){if(c.hp<=0&&R()<.15)parts.push({x:c.x+R()*10-5,y:c.y+R()*10-5,h:16,vh:.5+R()*.3,vx:R()*.6-.3,vy:R()*.6-.3,life:2,max:2,col:'#55525e',smoke:true});
     else if(c.hp>0&&c.hp<c.maxHp*.35&&R()<.08)parts.push({x:c.x+Math.cos(c.a)*c.w*.4,y:c.y+Math.sin(c.a)*c.w*.4,h:12,vh:.4,vx:R()*.4-.2,vy:R()*.4-.2,life:1.4,max:1.4,col:'#8a8694',smoke:true});}
   if(parts.length>700)parts.splice(0,parts.length-700);
@@ -1016,13 +1020,13 @@ function explode(x,y,r,dmg,src){
   for(let i=0;i<10;i++)parts.push({x:x+(R()-.5)*30,y:y+(R()-.5)*30,h:10,vh:.6+R()*.6,vx:(R()-.5)*1.2,vy:(R()-.5)*1.2,life:2.4,max:2.4,col:'#3a3640',smoke:true});
   sfx('boom',x,y);shake=Math.max(shake,clamp(20-dist(x,y,player.x,player.y)/40,3,20));flash=Math.max(flash,1);flashX=x;flashY=y;
   let kills=0;
-  for(const c of cars){if(c.hp<=0)continue;const d=dist(c.x,c.y,x,y);if(d>=r)continue;const was=c.hp,pf=c===player.car?(src==="p"?.25:src==="b"?.5:1):1;damage(c,dmg*(1-d/r*.6)*pf);
+  for(const c of cars){if(c.hp<=0)continue;const d=dist(c.x,c.y,x,y);if(d>=r)continue;const was=c.hp,pf=c===player.car?(src==="p"?.25:src==="b"?.5:src==="w"?.35:1):1;damage(c,dmg*(1-d/r*.6)*pf);
     if(was>0&&c.hp<=0&&isEnemy(c))kills++;c.v*=.3;
     if(!c.ai&&!(c===player.car&&fx.shield>0)){c.air=true;c.airStart=T;c.vz=Math.max(c.vz||0,(1-d/r)*4.5);c.z=Math.max(c.z||0,.5);}}
   for(const p of peds)if(p.alive&&dist(p.x,p.y,x,y)<r)knockPed(p);
   for(const b of barrels)if(b.alive&&b.fuse<=0&&dist(b.x,b.y,x,y)<r*.85)b.fuse=.12+R()*.12;
   if(heli&&!heli.falling&&dist(heli.x,heli.y,x,y)<r*.7)hitHeli(dmg*.5);
-  if(!player.car&&fx.shield<=0){const d=dist(player.x,player.y,x,y);if(d<r)player.hp-=dmg*.45*(1-d/r)*(src==="p"?.3:1);}
+  if(!player.car&&fx.shield<=0){const d=dist(player.x,player.y,x,y);if(d<r)player.hp-=dmg*.45*(1-d/r)*(src==="p"?.3:src==="w"?.6:1);}
   if(kills>=2&&state==='play'){slowT=.9;pushFeed(tr('MULTIKVADD')+' ×'+kills,'#ff8a1f');}}
 let flash=0,flashX=0,flashY=0;
 function hitHeli(d){if(!heli||heli.falling)return;heli.hp-=d;burst(heli.x,heli.y,'#fff3c4',6,2,heli.alt);
@@ -1169,6 +1173,7 @@ const chalRatio=c=>c.done?1:c.def.biome?0:Math.min(1,c.prog/c.n);
 /* ---------- Car-jacking ---------- */
 function takeCar(c){
   if(isEnemy(c)){c.stolen=c.kind;c.kind='civ';toast(tr('STULEN!'),TIER_COL[2],tr('Du tog deras bil'),1.2);addScore(200);}
+  if(!c.spec&&c.maxHp<100){const r=c.hp/c.maxHp;c.maxHp=100;c.hp=Math.max(1,r*100);}
   c.ai=false;c.stun=0;player.car=c;c.driven=true;}
 function enterCar(c){const hasDriver=(c.kind==='civ'&&c.ai&&!c.driven)||(isEnemy(c)&&c.hp>0);
   player.jack={c,t:0,phase:'walk',hasDriver,pulled:false};c.stun=Math.max(c.stun,3);c.v*=.2;player.spd=0;}
@@ -1653,19 +1658,20 @@ function animPed(m,p){const u=m.userData;m.position.set(p.x,groundY(p.x,p.y),p.y
   u.inner.rotation.z=0;u.inner.position.y=0;m.rotation.y=-p.a;
   const amp=p.flee>0?.9:.55,s=Math.sin(p.step*.22)*amp;
   u.legs[0].rotation.z=s;u.legs[1].rotation.z=-s;u.arms[0].rotation.z=-s*.8;u.arms[1].rotation.z=p.punch?1.5:s*.8;}
-function updateCamera(){
+const CAM_WANT=new THREE.Vector3();
+function updateCamera(fk){fk=fk||1;
   const pc=player.car,tx=player.x,ty=player.y,sp=pc?Math.abs(pc.v):0;
   const heading=pc?(pc.v<-1?pc.a+PI:pc.a):player.a;
-  camA=lerpAngle(camA,heading,pc?.07:.08);
+  camA=lerpAngle(camA,heading,1-Math.pow(1-(pc?.07:.08),fk));
   const back=state==='start'?150:pc?92+sp*6:62,up=state==='start'?95:pc?40+sp*1.8:32;
   const dx=-Math.cos(camA),dy=-Math.sin(camA);let d=back;
   for(let s=8;s<=back;s+=5)if(solid(tx+dx*s,ty+dy*s)){d=Math.max(16,s-10);break;}
-  const k=d/back,pz=pc?(pc.z||0):0,want=new THREE.Vector3(tx+dx*d,up*(.55+.45*k)+CURB+pz*.8,ty+dy*d);
-  camPos.lerp(want,.16);
+  const k=d/back,pz=pc?(pc.z||0):0,want=CAM_WANT.set(tx+dx*d,up*(.55+.45*k)+CURB+pz*.8,ty+dy*d);
+  camPos.lerp(want,1-Math.pow(1-.16,fk));
   camera.position.copy(camPos);
   if(shake>.3){camera.position.x+=(R()-.5)*shake;camera.position.y+=(R()-.5)*shake*.6;camera.position.z+=(R()-.5)*shake;}
   camera.lookAt(tx+Math.cos(camA)*30,CURB+(pc?10:16)+pz,ty+Math.sin(camA)*30);
-  fov+=((pc?62+sp*2.4:60)-fov)*.08;camera.fov=fov;camera.updateProjectionMatrix();
+  fov+=((pc?62+sp*2.4:60)-fov)*(1-Math.pow(1-.08,fk));camera.fov=fov;camera.updateProjectionMatrix();
   camX=camera.position.x;camY=camera.position.z;
   sky.position.copy(camera.position);STARS.position.copy(camera.position);
   MOON.position.set(camera.position.x-2600,camera.position.y+2400,camera.position.z-3400);
@@ -2064,10 +2070,18 @@ function renderSkinPreview(){const c2=$('skinView');
 function startGame(){if(state!=='start')return;audioInit();hideScreens();resetRun();}
 $('play').addEventListener('click',startGame);
 $('again').addEventListener('click',()=>{if(state==='over'&&performance.now()-overAt>1200)resetRun();});
+// The game steps at a fixed 60 Hz. To keep motion smooth on any refresh rate, everything that moves is drawn
+// between its previous and current step, then put back before the next step.
+const LERP_SETS=[cars,peds];let lerpSaved=[];
+function snapPrev(){for(const L of LERP_SETS)for(const o of L){o.px=o.x;o.py=o.y;o.pa=o.a;o.pz=o.z;}player.px=player.x;player.py=player.y;player.pa=player.a;player.pz=player.z;}
+function lerpOne(o,f){if(o.px===undefined||Math.abs(o.x-o.px)>80||Math.abs(o.y-o.py)>80)return;
+  lerpSaved.push(o,o.x,o.y,o.a,o.z);const g=f-1;o.x+=(o.x-o.px)*g;o.y+=(o.y-o.py)*g;if(o.pa!==undefined&&o.a!==undefined)o.a+=angDiff(o.a,o.pa)*g;if(typeof o.z==='number'&&typeof o.pz==='number')o.z+=(o.z-o.pz)*g;}
+function lerpIn(f){lerpSaved.length=0;if(f>=1)return;for(const L of LERP_SETS)for(const o of L)lerpOne(o,f);lerpOne(player,f);}
+function lerpOut(){const S=lerpSaved;for(let i=S.length-5;i>=0;i-=5){const o=S[i];o.x=S[i+1];o.y=S[i+2];o.a=S[i+3];o.z=S[i+4];}S.length=0;}
 let acc=0,last=performance.now();
 function frame(now){const rdt=Math.min(.1,(now-last)/1000);autoQuality(rdt);acc=paused?0:Math.min(DT*4,acc+rdt*(slowT>0?.35:1));if(slowT>0)slowT-=rdt;last=now;
-  while(acc>=DT){tick();acc-=DT;for(const k in pressed)delete pressed[k];touch.actP=false;touch.enterP=false;touch.swapP=false;}
-  updateCamera();syncScene();syncPowerups();syncCombat();audioUpdate();if(!$('skins').hidden)renderSkinPreview();renderFrame();renderMini();renderHud();requestAnimationFrame(frame);}
+  while(acc>=DT){snapPrev();tick();acc-=DT;for(const k in pressed)delete pressed[k];touch.actP=false;touch.enterP=false;touch.swapP=false;}
+  lerpIn(paused?1:acc/DT);updateCamera(rdt*60);syncScene();lerpOut();syncPowerups();syncCombat();audioUpdate();if(!$('skins').hidden)renderSkinPreview();renderFrame();renderMini();renderHud();requestAnimationFrame(frame);}
 requestAnimationFrame(frame);
 </script>
 
