@@ -331,6 +331,45 @@ button.bpt{cursor:pointer}button.bpt:hover,button.bpt:focus{outline:none;border-
 #modeobj{top:calc(92px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);background:var(--panel);padding:4px 12px;font-weight:700;font-size:13px;letter-spacing:.06em;white-space:nowrap;border-bottom:2px solid var(--signal);text-shadow:0 1px 0 #000;font-variant-numeric:tabular-nums;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
 #modeobj.low{border-bottom-color:var(--heat);color:var(--heat)}
 @media (max-width:820px){#modeobj{top:calc(198px + env(safe-area-inset-top,0px))}}
+/* === REWARD FX === */
+#fxlayer{position:fixed;inset:0;pointer-events:none;z-index:60;overflow:hidden}
+.fxpop{position:absolute;font-family:var(--display);text-shadow:0 2px 0 #000;white-space:nowrap;will-change:transform,opacity;letter-spacing:.03em}
+.fxcoin{position:absolute;will-change:transform,opacity}
+.fxconf{position:absolute;width:8px;height:12px;will-change:transform,opacity}
+#coinbox.fxbounce{animation:fxcb .4s cubic-bezier(.2,1.6,.4,1)}
+@keyframes fxcb{0%{transform:scale(1)}35%{transform:scale(1.35)}70%{transform:scale(.94)}100%{transform:scale(1)}}
+#score{transform-origin:right center}
+#score.fxbump{animation:fxsb .2s ease-out}
+@keyframes fxsb{50%{transform:scale(1.14)}}
+#feed div.fxnew{animation:fxfeed .35s cubic-bezier(.2,1.6,.4,1);transform-origin:right center}
+@keyframes fxfeed{from{transform:translateX(26px) scale(.75)}}
+.fxbounce{animation:fxcb .4s cubic-bezier(.2,1.6,.4,1)}
+.screen:not([hidden]) .wrap{animation:fxscr .28s ease-out}
+@keyframes fxscr{from{opacity:0;transform:translateY(12px)}}
+.screen:not([hidden]) .mlist .mitem{animation:fxitem .32s cubic-bezier(.2,.9,.3,1) backwards}
+.mlist .mitem:nth-child(2){animation-delay:.05s!important}.mlist .mitem:nth-child(3){animation-delay:.1s!important}.mlist .mitem:nth-child(4){animation-delay:.15s!important}.mlist .mitem:nth-child(n+5){animation-delay:.2s!important}
+@keyframes fxitem{from{opacity:0;transform:translateX(-18px)}}
+#over:not([hidden]) .stats div{animation:fxstat .4s cubic-bezier(.2,1.3,.4,1) backwards}
+#over .stats div:nth-child(2){animation-delay:.08s}#over .stats div:nth-child(3){animation-delay:.16s}#over .stats div:nth-child(4){animation-delay:.24s}#over .stats div:nth-child(5){animation-delay:.32s}
+@keyframes fxstat{from{opacity:0;transform:translateY(14px) scale(.9)}}
+.mitem{transition:gap .15s,color .15s,transform .1s}
+.mitem:active{transform:scale(.96)}
+.screen button:active{transform:scale(.97)}
+.gcar,.skin,button.bpt{transition:transform .14s,border-color .15s,box-shadow .15s}
+.gcar:not(.locked):hover,.skin:not(.locked):hover,button.bpt:hover{transform:translateY(-3px);box-shadow:0 6px 0 rgba(0,0,0,.28)}
+.gcar:active,.skin:active,button.bpt:active{transform:scale(.97)}
+.fxbest{align-self:flex-start;font-family:var(--display);font-size:clamp(22px,3.6vw,34px);color:#ffd23f;text-shadow:0 3px 0 #17111c;letter-spacing:.04em}
+.fxbest.go{animation:fxbest .7s cubic-bezier(.2,1.8,.4,1)}
+@keyframes fxbest{0%{transform:scale(.2) rotate(-8deg);opacity:0}60%{transform:scale(1.25) rotate(2deg);opacity:1}100%{transform:none}}
+.fxbp{max-width:760px}
+.fxbpl{display:flex;justify-content:space-between;font-family:var(--small);font-size:16px;color:var(--ink)}
+.fxbp .bpbar{margin:6px 0 0}
+.fxreveal{position:relative;overflow:hidden;animation:fxflip .7s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:var(--fxd,0ms)}
+@keyframes fxflip{0%{transform:perspective(700px) rotateY(90deg) scale(.8);opacity:0}60%{transform:perspective(700px) rotateY(-12deg) scale(1.06);opacity:1}100%{transform:none}}
+.fxreveal::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.65) 50%,transparent 65%);transform:translateX(-130%);animation:fxshine .9s ease-out forwards;animation-delay:calc(var(--fxd,0ms) + .45s);pointer-events:none}
+@keyframes fxshine{to{transform:translateX(130%)}}
+@media (prefers-reduced-motion:reduce){#fxlayer{display:none}.screen:not([hidden]) .wrap,.screen:not([hidden]) .mlist .mitem,#over:not([hidden]) .stats div,.fxbounce,#coinbox.fxbounce,#score.fxbump,#feed div.fxnew,.fxbest.go,.fxreveal,.fxreveal::after{animation:none!important}.mitem:active,.screen button:active,.gcar:hover,.skin:hover,button.bpt:hover{transform:none!important}}
+/* === END REWARD FX === */
 </style>
 </head>
 <body>
@@ -2653,6 +2692,134 @@ let acc=0,last=performance.now();
 function frame(now){const rdt=Math.min(.1,(now-last)/1000);autoQuality(rdt);acc=paused?0:Math.min(DT*4,acc+rdt*(slowT>0?.35:1));if(slowT>0)slowT-=rdt;last=now;
   while(acc>=DT){snapPrev();tick();acc-=DT;for(const k in pressed)delete pressed[k];touch.actP=false;touch.enterP=false;touch.swapP=false;}
   lerpIn(paused?1:acc/DT);updateCamera(rdt*60);syncScene();lerpOut();syncPowerups();syncCombat();syncMode();audioUpdate();if(!$('skins').hidden)renderSkinPreview();renderFrame();renderMini();renderModeMini();renderHud();renderModeHud();requestAnimationFrame(frame);}
+/* === REWARD FX ===========================================================
+   Reward animations. DOM + CSS + Web Animations only, no extra 3D cost.
+   Public API (screen pixel coordinates, all safe to call at any time):
+     fxPop(text,x,y,{color,size,dur,rise})   floating text that rises and fades
+     fxReward(kind,amount,label)             kind: 'coin' | 'score' | 'xp' | 'banner'
+     fxReveal(el,{delay})                    card flip + shine on a DOM element
+     fxCoinFly(n,x,y)                        n coins fly from (x,y) to the HUD coin counter
+     fxCount(el,from,to,ms,fmt,done)         animated number count-up
+     fxBurst(x,y,n,colors)                   small confetti burst
+     fxReduced()                             true when the user prefers reduced motion
+   This block wraps showOver, resetRun, renderHud, renderBP, renderSkins and
+   renderGarage from the outside, so the original functions stay untouched.
+   ======================================================================== */
+var fxLayer=null,fxLive=0,fxLastCoins=0,fxLastWallet=-1,fxLastScore=-1,fxLastTier=-1,fxLastFeed0=null,fxLastBump=0,fxRun={best:0,xp:0,tier:0,on:false};
+function fxReduced(){try{return !!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);}catch(e){return false;}}
+function fxL(){if(!fxLayer){fxLayer=document.createElement('div');fxLayer.id='fxlayer';fxLayer.setAttribute('aria-hidden','true');document.body.appendChild(fxLayer);}return fxLayer;}
+function fxAnim(el,frames,opt){fxLive++;const end=()=>{fxLive--;el.remove();};
+  if(!el.animate){setTimeout(end,opt.duration+(opt.delay||0));return null;}
+  const a=el.animate(frames,opt);a.onfinish=end;return a;}
+function fxPop(text,x,y,o){o=o||{};if(fxReduced()&&!o.force)return;if(fxLive>14)return;
+  if(x==null)x=innerWidth/2;if(y==null)y=innerHeight*.32;
+  const e=document.createElement('div');e.className='fxpop';e.textContent=text;e.style.color=o.color||'#ffd23f';e.style.fontSize=(o.size||18)+'px';
+  e.style.left=x+'px';e.style.top=y+'px';fxL().appendChild(e);const rise=o.rise==null?46:o.rise;
+  fxAnim(e,[{transform:'translate(-50%,0) scale(.5)',opacity:0},{transform:'translate(-50%,-8px) scale(1.15)',opacity:1,offset:.18},{transform:'translate(-50%,'+(-rise*.5)+'px) scale(1)',opacity:1,offset:.6},{transform:'translate(-50%,'+(-rise)+'px) scale(.95)',opacity:0}],{duration:(o.dur||0.9)*1000,easing:'ease-out'});}
+function fxBurst(x,y,n,cols){if(fxReduced())return;cols=cols||['#ffd23f','#ff3d5a','#3de0ff','#7dffa8','#fff3e2'];n=Math.min(n||18,28);
+  for(let i=0;i<n;i++){if(fxLive>60)return;const e=document.createElement('i');e.className='fxconf';e.style.left=x+'px';e.style.top=y+'px';e.style.background=cols[i%cols.length];fxL().appendChild(e);
+    const a=Math.random()*Math.PI*2,d=60+Math.random()*110,rot=Math.random()*540-270;
+    fxAnim(e,[{transform:'translate(-50%,-50%) scale(1)',opacity:1},{transform:'translate('+(Math.cos(a)*d)+'px,'+(Math.sin(a)*d-30)+'px) rotate('+rot+'deg)',opacity:1,offset:.6},{transform:'translate('+(Math.cos(a)*d*1.15)+'px,'+(Math.sin(a)*d+40)+'px) rotate('+rot*1.4+'deg)',opacity:0}],{duration:900+Math.random()*400,easing:'cubic-bezier(.2,.7,.3,1)'});}}
+function fxBounceCoin(){const b=document.getElementById('coinbox');if(!b)return;b.classList.remove('fxbounce');void b.offsetWidth;b.classList.add('fxbounce');}
+function fxCoinFly(n,x,y){const box=document.getElementById('coinbox');if(!box)return;const r=box.getBoundingClientRect(),tx=r.left+14,ty=r.top+r.height/2;
+  if(x==null){x=innerWidth/2;y=innerHeight*.6;}
+  if(fxReduced()){fxBounceCoin();return;}
+  n=Math.min(n||1,8);
+  for(let i=0;i<n;i++){if(fxLive>12){fxBounceCoin();return;}const e=document.createElement('i');e.className='coin fxcoin';e.style.left='0px';e.style.top='0px';fxL().appendChild(e);
+    const sx=x+(Math.random()-.5)*30,sy=y+(Math.random()-.5)*20,mx=(sx+tx)/2+(Math.random()-.5)*120,my=Math.min(sy,ty)-40-Math.random()*60,dl=i*55;
+    fxAnim(e,[{transform:'translate('+sx+'px,'+sy+'px) scale(.6)',opacity:0},{transform:'translate('+sx+'px,'+(sy-14)+'px) scale(1.3)',opacity:1,offset:.15},{transform:'translate('+mx+'px,'+my+'px) scale(1.1)',opacity:1,offset:.55},{transform:'translate('+tx+'px,'+ty+'px) scale(.7)',opacity:.9}],{duration:650,delay:dl,easing:'cubic-bezier(.35,0,.3,1)',fill:'both'});
+    setTimeout(fxBounceCoin,650+dl);}}
+function fxCount(el,from,to,ms,fmt,done){fmt=fmt||(v=>String(v));if(fxReduced()||ms<=0||from===to){el.textContent=fmt(to);if(done)done();return;}
+  const t0=performance.now();let fin=false;const finish=()=>{if(fin)return;fin=true;el.textContent=fmt(to);if(done)done();};
+  const step=now=>{if(fin)return;const k=Math.min(1,(now-t0)/ms),e=1-Math.pow(1-k,3);el.textContent=fmt(Math.round(from+(to-from)*e));if(k<1)requestAnimationFrame(step);else finish();};
+  requestAnimationFrame(step);setTimeout(finish,ms+120);}
+function fxReveal(el,o){if(!el||fxReduced())return;el.classList.remove('fxreveal');void el.offsetWidth;
+  if(o&&o.delay)el.style.setProperty('--fxd',o.delay+'ms');else el.style.removeProperty('--fxd');
+  el.classList.add('fxreveal');setTimeout(()=>{el.classList.remove('fxreveal');},1800+((o&&o.delay)||0));}
+function fxScreenPos(wx,wy,wz){try{const v=new THREE.Vector3(wx,wz,wy).project(camera);return[(v.x*.5+.5)*innerWidth,(-v.y*.5+.5)*innerHeight];}catch(e){return[innerWidth/2,innerHeight*.6];}}
+function fxReward(kind,amount,label){const box=document.getElementById('coinbox'),sc=document.getElementById('score');
+  if(kind==='coin'){const p=fxScreenPos(player.x,player.y,6);fxCoinFly(Math.min(8,Math.max(1,Math.ceil(amount/25))),p[0],p[1]);
+    if(box){const r=box.getBoundingClientRect();fxPop('+'+amount,r.left+20,r.bottom+14,{color:'#ffd23f',size:20,rise:30,force:true});}}
+  else if(kind==='score'&&sc){const r=sc.getBoundingClientRect();fxPop('+'+fmtScore(amount),r.right-30,r.bottom+10,{color:label||'#fff3e2',size:18,rise:24});}
+  else if(kind==='xp'||kind==='banner'){fxPop(label||('+'+fmtScore(amount)),null,null,{color:'#ffd23f',size:26,dur:1.4,rise:34,force:true});fxBurst(innerWidth/2,innerHeight*.3,14);}}
+/* --- per-frame detection (wraps renderHud so the game loop code stays untouched) --- */
+(function(){
+  const rh=renderHud;
+  renderHud=function(){rh();
+    // coin pickup -> flying coin; other wallet gains (Battle Pass coins) -> tick-up + "+N"
+    const dc=runCoins-fxLastCoins;fxLastCoins=runCoins;
+    if(fxLastWallet>=0&&wallet>fxLastWallet){const gain=wallet-fxLastWallet;
+      if(dc>0&&gain<=dc){const p=fxScreenPos(player.x,player.y,player.car?6:10);fxCoinFly(Math.min(dc,3),p[0],p[1]);}
+      else if(gain>3){fxCount(coinEl,fxLastWallet,wallet,700,fmtScore);fxReward('coin',gain);}}
+    fxLastWallet=wallet;
+    // big score jumps bump the score text
+    const sc=Math.floor(score);if(fxLastScore>=0&&sc-fxLastScore>=100&&performance.now()-fxLastBump>250){fxLastBump=performance.now();scoreEl.classList.remove('fxbump');void scoreEl.offsetWidth;scoreEl.classList.add('fxbump');}
+    fxLastScore=sc;
+    // newest feed row (stunt / near-miss / drift / combo) pops in
+    if(feed.length&&feed[0]!==fxLastFeed0){fxLastFeed0=feed[0];const d=feedEl.firstChild;if(d){d.classList.remove('fxnew');void d.offsetWidth;d.classList.add('fxnew');}}
+    // Battle Pass skin tier reached during a run (coin tiers already show the coin reward above)
+    if(bp.tier!==fxLastTier){if(fxLastTier>=0&&bp.tier>fxLastTier&&state==='play'&&!BP_TIERS[bp.tier-1].coins)fxReward('banner',0,'★ '+trf('Nivå {n}',{n:bp.tier})+' ★');fxLastTier=bp.tier;}
+  };
+})();
+/* --- run start snapshot --- */
+(function(){const rr=resetRun;resetRun=function(){fxRun={best:best,xp:bp.xp,tier:bp.tier,on:bp.on};fxLastCoins=0;fxLastScore=-1;rr();};})();
+/* --- end-of-run screen: score count-up, coins tally, NEW BEST burst, Battle Pass bar --- */
+(function(){
+  const so=showOver;
+  showOver=function(){so();try{overAnim();}catch(e){}};
+  function overAnim(){
+    const o=document.getElementById('over'),title=document.getElementById('overTitle');
+    let badge=document.getElementById('fxBest'),bar=document.getElementById('fxBp');
+    if(!badge){badge=document.createElement('div');badge.id='fxBest';badge.className='fxbest';badge.hidden=true;title.after(badge);}
+    if(!bar){bar=document.createElement('div');bar.id='fxBp';bar.className='fxbp';bar.hidden=true;
+      bar.innerHTML='<div class="fxbpl"><span id="fxBpLvl"></span><span id="fxBpXp"></span></div><div class="bpbar" aria-hidden="true"><i id="fxBpFill"></i></div>';
+      o.querySelector('.stats').after(bar);}
+    badge.hidden=true;bar.hidden=true;
+    const sc=Math.floor(score),isBest=sc>0&&sc>fxRun.best,reduced=fxReduced();
+    const oS=document.getElementById('oScore'),oC=document.getElementById('oCoins');
+    if(!reduced){oS.textContent='0';oC.textContent='+0';}
+    setTimeout(()=>{if(state==='over')fxCount(oS,0,sc,1000,fmtScore);},250);
+    setTimeout(()=>{if(state==='over')fxCount(oC,0,runCoins,Math.min(900,300+runCoins*12),v=>'+'+v,()=>{oC.classList.remove('fxbounce');void oC.offsetWidth;oC.classList.add('fxbounce');});},650);
+    if(isBest){badge.textContent='★ '+tr('Nytt rekord!').toUpperCase()+' ★';
+      const show=()=>{if(state!=='over')return;badge.hidden=false;badge.classList.remove('go');void badge.offsetWidth;badge.classList.add('go');
+        const r=badge.getBoundingClientRect();fxBurst(r.left+r.width/2,r.top+r.height/2,26);sfx('key');};
+      if(reduced)badge.hidden=false;else setTimeout(show,1300);}
+    if(bp.on){
+      const max=BP_TIERS.length,t0=fxRun.on?fxRun.tier:0,x0=fxRun.on?fxRun.xp:0,gain=Math.max(0,bp.xp-x0);
+      const lvl=document.getElementById('fxBpLvl'),xpEl=document.getElementById('fxBpXp'),fill=document.getElementById('fxBpFill');
+      const frac=(xp,t)=>t>=max?100:clamp((xp-bpXPFor(t))/BP_STEP*100,0,100);
+      const setLvl=n=>{lvl.textContent=trf('Nivå {n} / {m}',{n,m:max});};
+      setLvl(t0);xpEl.textContent='+'+fmtScore(gain)+' p';
+      fill.style.transition='none';fill.style.width=frac(x0,t0)+'%';bar.hidden=false;
+      const seq=[];for(let t=t0;t<bp.tier;t++)seq.push({to:100,tier:t+1});seq.push({to:frac(bp.xp,bp.tier),tier:null});
+      let i=0;
+      const run=()=>{if(state!=='over'||i>=seq.length)return;const s=seq[i++];
+        if(reduced){fill.style.transition='none';fill.style.width=s.to+'%';if(s.tier)setLvl(s.tier);run();return;}
+        void fill.offsetWidth;fill.style.transition='width .6s cubic-bezier(.3,.8,.3,1)';fill.style.width=s.to+'%';
+        setTimeout(()=>{if(state!=='over')return;
+          if(s.tier){setLvl(s.tier);lvl.classList.remove('fxbounce');void lvl.offsetWidth;lvl.classList.add('fxbounce');
+            const r=bar.getBoundingClientRect();fxPop('★ '+trf('Nivå {n}',{n:s.tier}),r.left+90,r.top-6,{size:22,force:true});sfx('key');
+            fill.style.transition='none';fill.style.width='0%';setTimeout(run,60);}
+          else run();},680);};
+      if(gain>0)setTimeout(run,1700);else{fill.style.width=frac(bp.xp,bp.tier)+'%';}
+    }
+  }
+})();
+/* --- Garage / Skins / Battle Pass: newly unlocked cards flip + shine once --- */
+(function(){
+  const KEY='hh-fxseen';let seen=null;
+  const load=()=>{if(seen)return;try{seen=JSON.parse(localStorage.getItem(KEY)||'null');}catch(e){seen=null;}};
+  const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(seen));}catch(e){}};
+  // First ever visit marks everything already unlocked as seen, so existing saves do not get a flood of animations.
+  function scan(items){load();const first=!Array.isArray(seen);if(first)seen=[];let d=0,dirty=first;
+    for(const[id,el,ok]of items){if(!ok||!el||seen.includes(id))continue;seen.push(id);dirty=true;if(!first){fxReveal(el,{delay:d});d+=160;}}
+    if(dirty)save();}
+  const wrapR=(fn,items)=>function(){fn.apply(this,arguments);try{scan(items());}catch(e){}};
+  const rb=renderBP;renderBP=wrapR(rb,()=>[...document.querySelectorAll('#bpTrack .bpt')].map((el,i)=>['bp'+(i+1),el,el.classList.contains('got')]));
+  const rs=renderSkins;renderSkins=wrapR(rs,()=>SKINS.map(s=>['skin:'+s.id,document.getElementById('skin-'+s.id),skinOK(s)]));
+  const rg=renderGarage;renderGarage=wrapR(rg,()=>CAR_SPECS.map(s=>['car:'+s.id,document.getElementById('car-'+s.id),owns(s.id)]));
+})();
+/* === END REWARD FX === */
 requestAnimationFrame(frame);
 </script>
 
