@@ -370,6 +370,15 @@ button.bpt{cursor:pointer}button.bpt:hover,button.bpt:focus{outline:none;border-
 @keyframes fxshine{to{transform:translateX(130%)}}
 @media (prefers-reduced-motion:reduce){#fxlayer{display:none}.screen:not([hidden]) .wrap,.screen:not([hidden]) .mlist .mitem,#over:not([hidden]) .stats div,.fxbounce,#coinbox.fxbounce,#score.fxbump,#feed div.fxnew,.fxbest.go,.fxreveal,.fxreveal::after{animation:none!important}.mitem:active,.screen button:active,.gcar:hover,.skin:hover,button.bpt:hover{transform:none!important}}
 /* === END REWARD FX === */
+/* === LIVING WORLD (css) === */
+#lwVig{position:fixed;inset:0;pointer-events:none;z-index:2;display:none}
+#lwVig.on{display:block}
+#lwVig i{position:absolute;inset:0;opacity:0;animation:lwsr .9s linear infinite}
+#lwVig i:first-child{background:radial-gradient(ellipse at center,transparent 52%,rgba(255,30,60,.5) 100%)}
+#lwVig i:last-child{background:radial-gradient(ellipse at center,transparent 52%,rgba(50,110,255,.5) 100%);animation-delay:-.45s}
+@keyframes lwsr{0%{opacity:0}12%{opacity:1}45%{opacity:0}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){#lwVig i{animation:none;opacity:.35}}
+/* === END LIVING WORLD (css) === */
 </style>
 </head>
 <body>
@@ -400,6 +409,7 @@ button.bpt{cursor:pointer}button.bpt:hover,button.bpt:focus{outline:none;border-
 <div id="weapon" class="hud" hidden><div id="wname">Pistol</div><div id="wammo">∞</div><div id="wslots"></div></div>
 <div id="hint" class="hud" hidden><kbd id="hintkey">E</kbd><span>Ta bilen</span></div>
 <div id="toast" class="hud"></div>
+<div id="lwVig" aria-hidden="true"><i></i><i></i></div>
 <div id="notices" class="hud" aria-live="polite"></div>
 <div id="zone" class="hud"></div>
 <canvas id="mini"></canvas>
@@ -486,6 +496,7 @@ button.bpt{cursor:pointer}button.bpt:hover,button.bpt:focus{outline:none;border-
     <nav class="mlist">
       <button id="langBtn" class="mitem">Språk: Svenska</button>
       <button id="gfxBtn" class="mitem">Grafik: Auto</button>
+      <button id="wxBtn" class="mitem">Väder</button>
       <button id="mute" class="mitem" aria-pressed="true">Ljud: på</button>
       <button id="radio" class="mitem" aria-pressed="true">Radio: på</button>
       <button id="sBack" class="mitem">Tillbaka</button>
@@ -655,6 +666,8 @@ Object.assign(DICT,{
 });
 /* === GAME MODES (strings) === */
 Object.assign(DICT,{"Läge":["Mode","Modus","Mode","Modo","Tilstand","Modus"],"Överlevnad":["Survival","Überleben","Survie","Supervivencia","Overlevelse","Overlevelse"],"Bankrån":["Heist","Banküberfall","Braquage","Atraco","Bankrøveri","Bankran"],"Tidsjakt":["Time Trial","Zeitfahren","Contre-la-montre","Contrarreloj","Tidsløb","Tidsjakt"],"Demolering":["Demolition","Zerstörung","Démolition","Demolición","Nedrivning","Demolering"],"Fly från polisen så länge du kan":["Run from the cops for as long as you can","Flieh so lange wie möglich vor der Polizei","Fuis la police le plus longtemps possible","Huye de la policía todo lo que puedas","Flygt fra politiet så længe du kan","Flykt fra politiet så lenge du kan"],"Rån banken och lämna bytet i gömstället. Fler stjärnor ger mer betalt.":["Rob the bank and drop the loot at the safehouse. More stars pay more.","Raube die Bank aus und bring die Beute ins Versteck. Mehr Sterne zahlen mehr.","Braque la banque et dépose le butin à la planque. Plus d'étoiles, plus de gains.","Atraca el banco y deja el botín en el escondite. Más estrellas pagan más.","Røv banken og aflever byttet i skjulestedet. Flere stjerner giver mere i løn.","Ran banken og lever byttet i gjemmestedet. Flere stjerner gir mer betalt."],"Ta checkpoints mot klockan. Varje checkpoint ger extra tid.":["Hit checkpoints against the clock. Every checkpoint adds time.","Fahre Checkpoints gegen die Uhr an. Jeder Checkpoint bringt Zeit.","Enchaîne les checkpoints contre la montre. Chacun ajoute du temps.","Pasa los puntos de control contra el reloj. Cada uno da tiempo extra.","Tag checkpoints mod uret. Hvert checkpoint giver ekstra tid.","Ta sjekkpunkter mot klokken. Hvert sjekkpunkt gir ekstra tid."],"Kvadda så många polisbilar du kan på 3 minuter.":["Wreck as many police cars as you can in 3 minutes.","Zerstöre in 3 Minuten so viele Polizeiautos wie möglich.","Détruis un maximum de voitures de police en 3 minutes.","Destruye tantos coches de policía como puedas en 3 minutos.","Smadr så mange politibiler du kan på 3 minutter.","Smadre så mange politibiler du kan på 3 minutter."],"Kör till banken":["Drive to the bank","Fahr zur Bank","Va à la banque","Ve al banco","Kør til banken","Kjør til banken"],"Stanna och ta bytet":["Stay and grab the loot","Bleib und schnapp die Beute","Reste et prends le butin","Quédate y coge el botín","Bliv og tag byttet","Bli og ta byttet"],"Kör bytet till gömstället":["Take the loot to the safehouse","Bring die Beute ins Versteck","Amène le butin à la planque","Lleva el botín al escondite","Kør byttet til skjulestedet","Kjør byttet til gjemmestedet"],"Checkpoint {n}":["Checkpoint {n}","Checkpoint {n}","Checkpoint {n}","Control {n}","Checkpoint {n}","Sjekkpunkt {n}"],"Kvadda poliser: {n}":["Cops wrecked: {n}","Polizisten zerstört: {n}","Flics détruits : {n}","Policías destruidos: {n}","Politibiler smadret: {n}","Politibiler smadret: {n}"],"Checkpoints":["Checkpoints","Checkpoints","Checkpoints","Controles","Checkpoints","Sjekkpunkter"],"BANKEN ÄR TÖMD":["BANK EMPTIED","BANK GELEERT","BANQUE VIDÉE","BANCO VACIADO","BANKEN ER TØMT","BANKEN ER TOMMET"],"Alarmet går! Kör till gömstället":["The alarm is on! Get to the safehouse","Der Alarm läuft! Ab ins Versteck","L'alarme sonne ! Fonce à la planque","¡Suena la alarma! Al escondite","Alarmen går! Kør til skjulestedet","Alarmen går! Kjør til gjemmestedet"],"BYTET LEVERERAT":["LOOT DELIVERED","BEUTE GELIEFERT","BUTIN LIVRÉ","BOTÍN ENTREGADO","BYTTET AFLEVERET","BYTTET LEVERT"],"{s} stjärnor betalar +{p} p":["{s} stars pay +{p} pts","{s} Sterne zahlen +{p} Pkt.","{s} étoiles paient +{p} pts","{s} estrellas pagan +{p} pts","{s} stjerner giver +{p} p","{s} stjerner gir +{p} p"],"CHECKPOINT":["CHECKPOINT","CHECKPOINT","CHECKPOINT","CONTROL","CHECKPOINT","SJEKKPUNKT"],"+{s} s extra tid":["+{s} s extra time","+{s} s Extrazeit","+{s} s de temps en plus","+{s} s de tiempo extra","+{s} s ekstra tid","+{s} s ekstra tid"],"TIDEN ÄR UTE":["TIME'S UP","ZEIT ABGELAUFEN","TEMPS ÉCOULÉ","SE ACABÓ EL TIEMPO","TIDEN ER GÅET","TIDEN ER UTE"],"Tid slut":["Time's up","Zeit ist um","Temps écoulé","Tiempo agotado","Tiden er gået","Tiden er ute"]});
+/* === LIVING WORLD (strings) === */
+Object.assign(DICT,{"Väder":["Weather","Wetter","Météo","Clima","Vejr","Vær"],"På":["On","An","Activé","Activado","Til","På"],"Av":["Off","Aus","Désactivé","Desactivado","Fra","Av"]});
 const PLACES={"sv":{"downtown":"centrum","suburb":"villaförorten","park":"stadsparken","harbor":"hamnen","forest":"skogen","farm":"åkrarna","beach":"stranden"},"en":{"downtown":"downtown","suburb":"the suburbs","park":"the city park","harbor":"the harbour","forest":"the forest","farm":"the fields","beach":"the beach"},"de":{"downtown":"Innenstadt","suburb":"Vorstadt","park":"Stadtpark","harbor":"Hafen","forest":"Wald","farm":"Felder","beach":"Strand"},"fr":{"downtown":"le centre-ville","suburb":"la banlieue","park":"le parc","harbor":"le port","forest":"la forêt","farm":"les champs","beach":"la plage"},"es":{"downtown":"el centro","suburb":"las afueras","park":"el parque","harbor":"el puerto","forest":"el bosque","farm":"los campos","beach":"la playa"},"da":{"downtown":"centrum","suburb":"villakvarteret","park":"byparken","harbor":"havnen","forest":"skoven","farm":"markerne","beach":"stranden"},"no":{"downtown":"sentrum","suburb":"villastrøket","park":"byparken","harbor":"havna","forest":"skogen","farm":"jordene","beach":"stranda"}};
 const placeName=b=>(PLACES[LANG]||PLACES.sv)[b]||b;
 function tr(s){if(LANG==='sv')return s;const e=DICT[s];return e&&e[LI[LANG]]!=null?e[LI[LANG]]:s;}
@@ -1087,6 +1100,7 @@ function collide(){
 function updatePed(p){
   if(!p.alive){p.deadT+=DT;if(p.deadT>18){if(peds.length>76){peds.splice(peds.indexOf(p),1);}else if(dist(p.x,p.y,camX,camY)>900)placePed(p);}return;}
   if(p.stumble>0){p.stumble-=DT;const k=p.stumble>.5?2.4:.5,nx=p.x+Math.cos(p.pushA)*k,ny=p.y+Math.sin(p.pushA)*k;if(!solid(nx,ny)){p.x=nx;p.y=ny;}if(p.stumble<=0){p.flee=6;p.a=p.pushA;}return;}
+  if(p.cheer>0){p.cheer-=DT;p.a=Math.atan2(player.y-p.y,player.x-p.x);return;}/* LIVING WORLD hook */
   if(R()<.003&&dist(p.x,p.y,player.x,player.y)>2600){const c=curbFar(500,1600,player.x,player.y);p.x=c.x;p.y=c.y;}
   const fleeing=p.flee>0,sp=fleeing?2.3:.65;
   if(fleeing){p.flee-=DT;const tgt=player.car||player;p.a=lerpAngle(p.a,Math.atan2(p.y-tgt.y,p.x-tgt.x),.15);}
@@ -1224,6 +1238,7 @@ function enemyShot(x,y,h,spread,dmg,kind){
   shots.push({x:x+Math.cos(a)*30,y:y+Math.sin(a)*30,h,vh:(10-h)/Math.max(1,t),vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1.6,dmg,from:'e',kind,r:45});
   sfx(kind==='shell'?'cannon':'eshot',x,y);}
 function explode(x,y,r,dmg,src){
+  lwBoom(x,y);
   const V3=typeof vfxExplosion==='function';if(V3)vfxExplosion(x,y,r);blastPush(x,y,r);
   burst(x,y,'#ff9a3c',V3?22:60,7,12);burst(x,y,'#ffd23f',V3?10:30,4,22);
   for(let i=0;i<(V3?3:10);i++)parts.push({x:x+(R()-.5)*30,y:y+(R()-.5)*30,h:10,vh:.6+R()*.6,vx:(R()-.5)*1.2,vy:(R()-.5)*1.2,life:2.4,max:2.4,col:'#3a3640',smoke:true});
@@ -1271,7 +1286,7 @@ function updateAir(c){if(c.z===undefined){c.z=0;c.vz=0;c.air=false;}
   const gh=rampH(c.x,c.y);
   if(c.air){c.vz-=.2;c.z+=c.vz;
     if(c.z<=gh){const at=T-(c.airStart||T),hard=-c.vz;c.z=gh;c.air=false;c.vz=0;if(hard>2&&typeof vfxDust==='function')vfxDust(c.x,c.y,Math.min(14,Math.round(hard*3)),gh);
-      if(c===player.car){shake=Math.max(shake,3+Math.min(9,hard*1.4));sfx('land');
+      if(c===player.car){shake=Math.max(shake,3+Math.min(9,hard*1.4));sfx('land');if(at>.9)lwCheer();
         if(at>.35&&state==='play'){chal('air',at);const pts=Math.round(at*400);addScore(pts);pushFeed(tr('LUFTTID')+' '+at.toFixed(1)+' s +'+fmtScore(pts*(fx.x2>0?2:1)),'#7dffa8');}}}}
   else{const climb=gh-c.z;c.z=gh;if(climb>.5&&gh>5&&Math.abs(c.v)>3.4){c.air=true;c.vz=1.4+Math.abs(c.v)*.34;c.airStart=T;}}}
 function updateCombat(){
@@ -1707,7 +1722,7 @@ function modeOver(){const q=id=>document.getElementById(id),dS=q('oScore').previ
   q('oScore').textContent=fmtScore(GM.final);q('oBest').textContent=fmtScore(modeBest[MODE]);}
 
 function tick(){
-  T+=DT;
+  T+=DT;lwTick();
   if(state==='play')updatePlayer();
   else if(state==='dead'){deadT-=DT;if(deadT<=0)showOver();}
   if(state!=='start'){
@@ -1720,6 +1735,36 @@ function tick(){
   if(parts.length>700)parts.splice(0,parts.length-700);
   for(const c of cars){c.wheel+=c.v*.25;if(c.doorOpen>0&&!(player.jack&&player.jack.c===c))c.doorOpen=Math.max(0,c.doorOpen-DT*2.5);}
 }
+
+/* === LIVING WORLD (logic) === day/night clock, weather, pedestrian reactions. THREE-free. */
+const LWREF={};
+const LW={ph:.12+Math.random()*.24,cycle:420,rain:0,rainT:0,fog:0,fogT:0,wet:0,wxTimer:45,wx:true,cheerT:0,boomT:0};
+try{LW.wx=localStorage.getItem('hh-wx')!=='0';}catch(e){}
+function lwTick(){
+  LW.ph=(LW.ph+DT/LW.cycle)%1;
+  LW.wxTimer-=DT;
+  if(LW.wxTimer<=0){LW.wxTimer=40+R()*80;LW.rainT=0;LW.fogT=0;const r=R();
+    if(r<.3)LW.rainT=.55+R()*.45;else if(r<.45)LW.fogT=.4+R()*.6;}
+  if(!LW.wx){LW.rainT=0;LW.fogT=0;}
+  const k=Math.min(1,DT*.3);LW.rain+=(LW.rainT-LW.rain)*k;LW.fog+=(LW.fogT-LW.fog)*k;
+  if(LW.rain<.004&&LW.rainT===0)LW.rain=0;if(LW.fog<.004&&LW.fogT===0)LW.fog=0;
+  LW.wet=LW.rain>.05?Math.min(1,LW.wet+DT*.2):Math.max(0,LW.wet-DT/150);
+  if(LW.cheerT>0)LW.cheerT-=DT;if(LW.boomT>0)LW.boomT-=DT;
+  // pedestrians dive away from a fast car that is about to hit them (only the ones close to the player)
+  const pc=player.car;
+  for(const p of peds){
+    if(!p.alive)continue;
+    if(p.scared>0)p.scared-=DT;
+    if(p.dive>0){p.dive-=DT;const nx=p.x+Math.cos(p.diveA)*2.5,ny=p.y+Math.sin(p.diveA)*2.5;if(!solid(nx,ny)){p.x=nx;p.y=ny;}continue;}
+    if(p.diveCD>0){p.diveCD-=DT;continue;}
+    if(!pc||pc.v<5||p.stumble>0)continue;
+    const dx=p.x-pc.x,dy=p.y-pc.y;if(Math.abs(dx)>110||Math.abs(dy)>110)continue;
+    const ca=Math.cos(pc.a),sa=Math.sin(pc.a),f=dx*ca+dy*sa,l=-dx*sa+dy*ca;
+    if(f>8&&f<105&&Math.abs(l)<34){p.diveCD=2.5;if(R()<.55){p.dive=.45;p.diveA=pc.a+(l>=0?PI/2:-PI/2);p.flee=Math.max(p.flee,3);p.cheer=0;}}}
+}
+function lwBoom(x,y){LW.boomT=1.5;for(const p of peds)if(p.alive&&dist(p.x,p.y,x,y)<430){p.flee=Math.max(p.flee,6);p.cheer=0;p.scared=2.2;}}
+function lwCheer(){LW.cheerT=6;let n=0;for(const p of peds){if(!p.alive||p.flee>0||p.stumble>0||n>=14)continue;if(dist(p.x,p.y,player.x,player.y)<280){p.cheer=4.5+R()*2.5;p.film=R()<.4;n++;}}}
+/* === END LIVING WORLD (logic) === */
 
 /* ================= 3D ================= */
 const cv=document.getElementById('game');
@@ -1845,7 +1890,7 @@ for(let cx=0;cx<N;cx++)for(let cy=0;cy<N;cy++){const b=blocks[cx][cy],mx=b.bx+BS
   for(const[x,y]of L){addStatic(poleGeo,poleMat,mtx(x,CURB+21,y,1,1,1));addStatic(bulbGeo,bulbMat,mtx(x,CURB+42,y,1,1.3,1));}
   for(const[x,y]of H){addStatic(poleGeo,poleMat,mtx(x,40,y,1.6,1.9,1.6));addStatic(BOX,floodMat,mtx(x,81,y,10,3,6));}
   const pool=new THREE.InstancedMesh(PLANE,poolMat,L.length);L.forEach(([x,y],i)=>setI(pool,i,x,CURB+.3,y,190,1,190));scene.add(pool);
-  const fp=new THREE.InstancedMesh(PLANE,floodPool,H.length);H.forEach(([x,y],i)=>setI(fp,i,x,.3,y,420,1,420));scene.add(fp);}
+  const fp=new THREE.InstancedMesh(PLANE,floodPool,H.length);H.forEach(([x,y],i)=>setI(fp,i,x,.3,y,420,1,420));scene.add(fp);LWREF.lamp={poolMat,floodPool,bulbMat,floodMat};}
 // trees: round, pine and palm
 {const trunk=new THREE.CylinderGeometry(1.5,2.2,16,6),crown=new THREE.IcosahedronGeometry(1,0),cone=new THREE.ConeGeometry(1,1,7),seg=new THREE.CylinderGeometry(1.3,1.6,10,5),leaf=new THREE.BoxGeometry(1,1,1),
     tm=lam('#3b2a20'),cm=lam('#22553a'),cm2=lam('#2d6b44'),pm=lam('#1a4228'),pm2=lam('#21502f'),palmT=lam('#6a5236'),palmL=lam('#2e7a3a');
@@ -2210,6 +2255,208 @@ function autoQuality(rdt){ftEma+=(rdt*1000-ftEma)*.05;if(gfxMode!=='auto'||state
   if(ftEma>24&&qTier<3){qTier++;qGood=0;applyQuality();}else if(ftEma<15&&qTier>1){qGood++;if(qGood>=3){qTier--;qGood=0;applyQuality();}}else qGood=0;}
 applyQuality();
 function renderFrame(){if(useBloom)composer.render();else renderer.render(scene,camera);}
+
+/* === LIVING WORLD (3D) ===========================================================
+   Day/night cycle, weather, ambient animation. Everything here is cheap on purpose:
+   no real lights and no shadows (only emissive tricks and additive sprites), instanced
+   meshes, and only things near the player are animated. Quality tiers (qTier):
+   rain 1400/900/300/0 streaks, birds 40/28/14/6. Tests: set LW.ph (0..1, .25 = noon,
+   .75 = midnight), LW.rainT / LW.fogT (0..1) and LW.rain / LW.fog. */
+const LWU={t:{value:0},k:{value:1}};
+const LW3={dayK:1,winK:0,lightsK:0,rt:0,pT:performance.now(),skyT:0,sky:[-9,-9,-9],env:'',vg:-1,sun:null,stM:0,hemi:null,dots:null,skyline:null,fogN:new THREE.Color('#1b1a3a')};
+const lwC1=new THREE.Color(),lwC2=new THREE.Color(),lwC3=new THREE.Color();
+const lwSm=(a,b,x)=>{x=clamp((x-a)/(b-a),0,1);return x*x*(3-2*x);};
+const lwMix=(a,b,k)=>a+(b-a)*k;
+const LWD=new THREE.Object3D();LWD.rotation.order='YXZ';
+LW3.hemi=scene.children.find(o=>o.isHemisphereLight);
+/* ---- extra environment map for daytime reflections ---- */
+{const envD=canvasTex(512,256,(g)=>{const gr=g.createLinearGradient(0,0,0,256);gr.addColorStop(0,'#3a78c8');gr.addColorStop(.45,'#a8d0f0');gr.addColorStop(.5,'#e8f0f8');gr.addColorStop(.56,'#7a8088');gr.addColorStop(1,'#4a4c52');g.fillStyle=gr;g.fillRect(0,0,512,256);
+    const m=g.createRadialGradient(140,40,0,140,40,30);m.addColorStop(0,'#fffbe8');m.addColorStop(1,'rgba(255,250,230,0)');g.fillStyle=m;g.fillRect(100,0,80,80);});
+  envD.mapping=THREE.EquirectangularReflectionMapping;const pm=new THREE.PMREMGenerator(renderer);LW3.envDay=pm.fromEquirectangular(envD).texture;pm.dispose();LW3.envNight=scene.environment;LW3.env='n';}
+/* ---- sun sprite (the existing MOON sprite is reused and moved on the opposite side) ---- */
+{const t=canvasTex(128,128,(g)=>{const gr=g.createRadialGradient(64,64,4,64,64,64);gr.addColorStop(0,'rgba(255,255,240,1)');gr.addColorStop(.18,'rgba(255,244,200,1)');gr.addColorStop(.3,'rgba(255,220,150,.45)');gr.addColorStop(1,'rgba(255,200,120,0)');g.fillStyle=gr;g.fillRect(0,0,128,128);});
+  LW3.sun=new THREE.Sprite(new THREE.SpriteMaterial({map:t,fog:false,depthWrite:false,transparent:true}));LW3.sun.scale.set(900,900,1);scene.add(LW3.sun);}
+/* ---- find things created inside other blocks (no edits needed there) ---- */
+const LWM={sway:[],tl:[]};
+scene.traverse(o=>{
+  if(o.isMesh&&o.material&&o.material.isMeshBasicMaterial&&o.material.color.getHex()===0x100f22)(LW3.skyline||(LW3.skyline=[])).push(o.material);
+  else if(o.isPoints&&o.material.vertexColors&&!LW3.dots){o.material.transparent=true;LW3.dots=o.material;}
+  else if(o.isMesh&&o.material&&o.material.isMeshLambertMaterial&&!o.material.map&&!LWM.sway.includes(o.material)){
+    const a={'22553a':1,'2d6b44':1,'1a4228':.7,'21502f':.7,'2e7a3a':2.2}[o.material.color.getHexString()];
+    if(a){const m=o.material;LWM.sway.push(m);
+      m.onBeforeCompile=sh=>{sh.uniforms.uWt=LWU.t;sh.uniforms.uWk=LWU.k;sh.uniforms.uAmp={value:a};
+        sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uWt;uniform float uWk;uniform float uAmp;')
+          .replace('#include <begin_vertex>','#include <begin_vertex>\nfloat lwH=clamp((position.y-8.)/30.,0.,1.);transformed.x+=sin(uWt*1.6+position.x*.021+position.z*.017)*uAmp*uWk*lwH;transformed.z+=cos(uWt*1.3+position.z*.019+position.x*.011)*uAmp*.7*uWk*lwH;');};
+      m.customProgramCacheKey=()=>'lwsway';m.needsUpdate=true;}}});
+const LWE=[...Object.values(sideMats),...houseMats,...SHOPS];LWE.forEach(m=>{m.userData.lwE=m.emissiveIntensity;});
+/* ---- flags on some towers (instanced, waved in the vertex shader) ---- */
+{const L=[];for(const col of blocks)for(const b of col)for(const d of b.bld){if(d.type==='tower'&&Math.floor(d.acx*997)%4===0&&L.length<70)L.push([d.x+6,CURB+d.ht,d.y+6,Math.floor(d.acy*997)%4*PI/2]);}
+  const tex=canvasTex(64,40,(g)=>{g.fillStyle='#e8334a';g.fillRect(0,0,64,40);g.fillStyle='#fff3e2';g.fillRect(0,15,64,10);g.fillStyle='#17111c';g.fillRect(24,0,8,40);});
+  const cloth=new THREE.PlaneGeometry(18,10,10,1).translate(9,0,0);
+  const mat=new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide});
+  mat.onBeforeCompile=sh=>{sh.uniforms.uWt=LWU.t;sh.uniforms.uWk=LWU.k;sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uWt;uniform float uWk;')
+    .replace('#include <begin_vertex>','#include <begin_vertex>\ntransformed.z+=sin(uv.x*8.-uWt*7.)*uv.x*3.2*uWk;transformed.y+=sin(uv.x*6.-uWt*6.)*uv.x*.9;');};
+  mat.customProgramCacheKey=()=>'lwflag';
+  const fl=new THREE.InstancedMesh(cloth,mat,L.length),po=new THREE.InstancedMesh(BOX,lam('#3a3c48'),L.length);
+  L.forEach(([x,y,z,r],i)=>{LWD.rotation.set(0,r,0);LWD.position.set(x,y+13,z);LWD.scale.set(.9,26,.9);LWD.updateMatrix();po.setMatrixAt(i,LWD.matrix);
+    LWD.position.set(x,y+21,z);LWD.scale.set(1,1,1);LWD.updateMatrix();fl.setMatrixAt(i,LWD.matrix);});
+  fl.frustumCulled=po.frustumCulled=false;scene.add(fl);scene.add(po);}
+/* ---- traffic lights at city / suburb crossings ---- */
+{const L=[];for(let i=1;i<N;i++)for(let j=1;j<N;j++){const k=[blocks[i-1][j-1],blocks[i][j-1],blocks[i-1][j],blocks[i][j]].some(b=>b.kind==='downtown'||b.kind==='suburb');if(k)L.push({x:i*CELL-8,z:j*CELL-40,off:(i*7+j*13)%14,st:-1,i:L.length});}
+  const n=L.length,pole=new THREE.InstancedMesh(BOX,lam('#2c2e3a'),n),head=new THREE.InstancedMesh(BOX,lam('#0d0e14'),n);
+  const lamps=['#ff2a2a','#ffc400','#28ff6a'].map(c=>{const m=new THREE.InstancedMesh(BOX,basic(c),n);m.frustumCulled=false;scene.add(m);return m;});
+  L.forEach((l,i)=>{LWD.rotation.set(0,0,0);LWD.scale.set(1.2,34,1.2);LWD.position.set(l.x,CURB+17,l.z);LWD.updateMatrix();pole.setMatrixAt(i,LWD.matrix);
+    LWD.scale.set(4,13,4);LWD.position.set(l.x,CURB+40.5,l.z);LWD.updateMatrix();head.setMatrixAt(i,LWD.matrix);});
+  pole.frustumCulled=head.frustumCulled=false;scene.add(pole);scene.add(head);LWM.tl=L;LWM.tlLamps=lamps;
+  LWM.tlSet=(l,st)=>{lamps.forEach((m,k)=>{LWD.rotation.set(0,0,0);const on=st===k;LWD.scale.setScalar(on?1:.0001);LWD.scale.set(on?4.8:.0001,on?3.4:.0001,on?4.8:.0001);LWD.position.set(l.x,CURB+40.5+(1-k)*4.2,l.z);LWD.updateMatrix();m.setMatrixAt(l.i,LWD.matrix);m.instanceMatrix.needsUpdate=true;});};}
+/* ---- harbour cranes: trolley + hanging container swing along the jib ---- */
+LWM.cranes=[];
+{const cont=lam('#c85a2a'),dark=lam('#22232a');
+  for(const col of blocks)for(const b of col)if(b.crane){const g=new THREE.Group(),tr_=new THREE.Mesh(BOX,dark),sw=new THREE.Group(),cab=new THREE.Mesh(BOX,dark),ct=new THREE.Mesh(BOX,cont);
+    tr_.scale.set(10,5,14);g.add(tr_);cab.scale.set(.6,1,.6);sw.add(cab);ct.scale.set(30,8,12);sw.add(ct);g.add(sw);g.visible=false;scene.add(g);
+    LWM.cranes.push({g,tr:tr_,sw,cab,ct,x:b.crane.x+31,z:b.crane.y+31,ph:b.crane.x*.013+b.crane.y*.007});}}
+/* ---- airport: one plane takes off, one lands, in turns ---- */
+const LWP={g:new THREE.Group(),st:'idle',t:8,x:0,alt:0,v:0,dir:1,x0:AIR_X0*CELL+ROAD,x1:AIR_X1*CELL+ROAD+BS,ry:AIR_Y*CELL+ROAD+BS/2,next:'takeoff'};
+{const w=lam('#f2f2f6'),bl=lam('#2f5f9a'),gl=lam('#2a4a66'),add=(m,sx,sy,sz,x,y,z)=>{const o=new THREE.Mesh(BOX,m);o.scale.set(sx,sy,sz);o.position.set(x,y,z);LWP.g.add(o);return o;};
+  add(w,56,8,8,0,0,0);add(gl,8,3,7,22,2,0);add(w,10,1.6,64,-2,-1,0);add(bl,8,1.6,66,-2.6,-1.4,0);add(w,7,11,1.6,-26,7,0);add(w,6,1.2,22,-25,1,0);
+  add(w,10,5,5,6,-5,-12);add(w,10,5,5,6,-5,12);
+  LWP.lr=add(basic('#ff2020'),2,2,2,-6,-1,32);LWP.lg=add(basic('#20ff60'),2,2,2,-6,-1,-32);LWP.g.visible=false;scene.add(LWP.g);}
+function lwPlane(dt){const P=LWP,len=P.x1-P.x0;
+  if(P.st==='idle'){P.t-=dt;P.g.visible=false;if(P.t<=0){P.st=P.next;if(P.st==='takeoff'){P.dir=1;P.x=P.x0+80;P.v=0;P.alt=0;P.next='land';}else{P.dir=-1;P.x=P.x1+3000;P.alt=540;P.v=175;P.next='takeoff';}}return;}
+  if(P.st==='takeoff'){P.v+=9.5*dt;P.x+=P.v*dt;P.alt=Math.max(0,(P.x-(P.x0+len*.68))*.2);if(P.alt>650){P.st='idle';P.t=45+R()*35;}}
+  else{P.x-=P.v*dt;P.alt=Math.max(0,(P.x-(P.x1-120))*.18);if(P.alt<=0){P.v=Math.max(0,P.v-13*dt);if(P.v<=0){P.st='wait';P.t=7;}}if(P.x<P.x0-200)P.st='idle',P.t=30;}
+  if(P.st==='wait'){P.t-=dt;if(P.t<=0){P.st='idle';P.t=40+R()*30;}}
+  const near=Math.abs(P.x-camX)<4200&&Math.abs(P.ry-camY)<4200;P.g.visible=near&&P.st!=='idle';if(!near)return;
+  const climbing=P.alt>0;P.g.position.set(P.x,P.alt+9,P.ry);P.g.rotation.set(0,P.dir>0?0:PI,0);
+  P.g.rotation.z=climbing?(P.dir>0?.14:.08):0;P.lr.visible=P.lg.visible=Math.floor(T*1.6)%2===0;}
+/* ---- birds (pigeons on the pavement that scatter when you come close) ---- */
+const LWB={list:[],body:null,wing:null};
+{LWB.body=new THREE.InstancedMesh(BOX,lam('#8d909e'),40);LWB.wing=new THREE.InstancedMesh(BOX,lam('#a9acba'),80);
+  for(const im of[LWB.body,LWB.wing]){im.frustumCulled=false;im.count=0;scene.add(im);}
+  for(let i=0;i<40;i++)LWB.list.push({x:0,y:0,z:0,a:R()*TAU,st:0,t:0,ph:R()*TAU,init:false});}
+function lwBirds(dt,nk){const nb=[40,28,14,6][qTier]||6,pc=player.car,sp=pc?Math.abs(pc.v):0;let spawned=0,bi=0,wi=0;
+  for(let i=0;i<nb;i++){const b=LWB.list[i];
+    if(!b.init||(b.st===0&&dist(b.x,b.y,player.x,player.y)>1100)||(b.st===1&&b.t>7)){if(spawned>=3)continue;spawned++;const p=curbFar(150,950,player.x,player.y);b.x=p.x+(R()-.5)*20;b.y=p.y+(R()-.5)*20;b.st=0;b.t=0;b.init=true;b.z=0;continue;}
+    let flap=0,sc=1;
+    if(b.st===0){if(dist(b.x,b.y,player.x,player.y)<(pc?60+sp*7:38)){b.st=1;b.t=0;b.a=Math.atan2(b.y-player.y,b.x-player.x)+(R()-.5)*1.3;}
+      else if(nk>.75)sc=.0001;}
+    if(b.st===1){b.t+=dt;b.a+=Math.sin(b.t*1.7+b.ph)*.012;const s=60+b.t*14;b.x+=Math.cos(b.a)*s*dt;b.y+=Math.sin(b.a)*s*dt;b.z=Math.min(95,b.z+(70-b.t*9)*dt);flap=Math.sin(T*28+b.ph);}
+    const gy=groundY(b.x,b.y)+2.2+b.z+(b.st===0?Math.abs(Math.sin(T*3+b.ph))*(Math.sin(T*.7+b.ph*3)>.6?1.6:0):0);
+    LWD.rotation.set(0,-b.a,0);LWD.position.set(b.x,gy,b.y);LWD.scale.set(5*sc,2.6*sc,2.8*sc);LWD.updateMatrix();LWB.body.setMatrixAt(bi++,LWD.matrix);
+    for(const sd of[-1,1]){const f=flap*.9,ca=Math.cos(b.a),sa=Math.sin(b.a),lz=sd*(2.8*Math.cos(f)+.4),ly=Math.abs(f)*0+Math.sin(f)*2.6;
+      LWD.rotation.set(sd*f,-b.a,0);LWD.position.set(b.x-lz*sa,gy+ly,b.y+lz*ca);LWD.scale.set(2.6*sc,.5*sc,(b.st?5.2:3.2)*sc);LWD.updateMatrix();LWB.wing.setMatrixAt(wi++,LWD.matrix);}}
+  LWB.body.count=bi;LWB.wing.count=wi;LWB.body.instanceMatrix.needsUpdate=LWB.wing.instanceMatrix.needsUpdate=true;}
+/* ---- steam from manholes ---- */
+const LWS={src:[],pts:null,disc:null,n:0};
+{for(let i=0;i<=N;i++)for(let j=0;j<=N;j++)if((i*5+j*3)%4===0)LWS.src.push([i*CELL+26,j*CELL+30]);
+  const MAX=8,P=6,g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(MAX*P*3),3));g.setAttribute('aAge',new THREE.BufferAttribute(new Float32Array(MAX*P),1));
+  const tex=radialTex('rgba(255,255,255,1)','rgba(255,255,255,0)');
+  LWS.mat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,fog:false,uniforms:{map:{value:tex},uS:{value:700}},
+    vertexShader:'uniform float uS;attribute float aAge;varying float vA;void main(){vec4 mv=modelViewMatrix*vec4(position,1.);gl_PointSize=(14.+46.*aAge)*uS/-mv.z;vA=(1.-aAge)*smoothstep(0.,.1,aAge)*.38;gl_Position=projectionMatrix*mv;}',
+    fragmentShader:'uniform sampler2D map;varying float vA;void main(){vec4 t=texture2D(map,gl_PointCoord);gl_FragColor=vec4(vec3(.8,.82,.88),t.a*vA);}'});
+  LWS.pts=new THREE.Points(g,LWS.mat);LWS.pts.frustumCulled=false;LWS.pts.visible=false;scene.add(LWS.pts);
+  LWS.disc=new THREE.InstancedMesh(new THREE.CylinderGeometry(4.5,4.5,.5,10),lam('#15161d'),MAX);LWS.disc.frustumCulled=false;LWS.disc.count=0;scene.add(LWS.disc);LWS.MAX=MAX;LWS.P=P;LWS.act=[];LWS.cd=0;}
+function lwSteam(dt){LWS.cd-=dt;
+  if(LWS.cd<=0){LWS.cd=.5;LWS.act.length=0;for(const s of LWS.src){if(Math.abs(s[0]-camX)<650&&Math.abs(s[1]-camY)<650){LWS.act.push(s);if(LWS.act.length>=LWS.MAX)break;}}
+    LWS.disc.count=LWS.act.length;LWS.act.forEach((s,i)=>{LWD.rotation.set(0,0,0);LWD.scale.set(1,1,1);LWD.position.set(s[0],.3,s[1]);LWD.updateMatrix();LWS.disc.setMatrixAt(i,LWD.matrix);});LWS.disc.instanceMatrix.needsUpdate=true;}
+  const pa=LWS.pts.geometry.attributes,P=LWS.P;LWS.pts.visible=LWS.act.length>0;
+  LWS.act.forEach((s,i)=>{for(let k=0;k<P;k++){const age=((T*.32+k/P+i*.37)%1),idx=i*P+k;pa.position.setXYZ(idx,s[0]+Math.sin(age*5+k)*3+age*6,2+age*46,s[1]+Math.cos(age*4+k*2)*3);pa.aAge.setX(idx,age);}});
+  for(let i=LWS.act.length*P;i<LWS.MAX*P;i++)pa.aAge.setX(i,1);
+  pa.position.needsUpdate=pa.aAge.needsUpdate=true;LWS.mat.uniforms.uS.value=renderer.getPixelRatio()*innerHeight*.5/Math.tan(camera.fov*PI/360);}
+/* ---- rain streaks (one draw call, positions computed in the vertex shader) and ground splashes ---- */
+const LWR={};
+{const n=1400,pos=new Float32Array(n*6),en=new Float32Array(n*2);for(let i=0;i<n;i++){const a=R(),b=R(),c=R();for(let k=0;k<2;k++){pos.set([a,b,c],i*6+k*3);en[i*2+k]=k;}}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('aEnd',new THREE.BufferAttribute(en,1));
+  LWR.mat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,fog:false,uniforms:{uT:{value:0},uC:{value:new THREE.Vector3()},uA:{value:0}},
+    vertexShader:'uniform float uT;uniform vec3 uC;attribute float aEnd;varying float vA;uniform float uA;void main(){vec3 B=vec3(520.,240.,520.);vec3 p;p.y=mod(position.y*B.y-uT*(480.+position.x*160.),B.y);'
+      +'p.x=mod(position.x*B.x-uC.x,B.x)-B.x*.5+uC.x;p.z=mod(position.z*B.z-uC.z,B.z)-B.z*.5+uC.z;p.x+=p.y*.1;vA=uA*(1.-smoothstep(170.,255.,length(p.xz-uC.xz)));p+=aEnd*vec3(1.6,15.,0.);gl_Position=projectionMatrix*viewMatrix*vec4(p,1.);}',
+    fragmentShader:'varying float vA;void main(){gl_FragColor=vec4(.74,.82,.96,vA);}'});
+  LWR.mesh=new THREE.LineSegments(g,LWR.mat);LWR.mesh.frustumCulled=false;LWR.mesh.visible=false;scene.add(LWR.mesh);
+  LWR.sp=new THREE.InstancedMesh(new THREE.RingGeometry(.55,1,10).rotateX(-PI/2),new THREE.MeshBasicMaterial({color:'#cfe0ff',transparent:true,opacity:.4,depthWrite:false,blending:THREE.AdditiveBlending}),36);
+  LWR.sp.frustumCulled=false;LWR.sp.visible=false;scene.add(LWR.sp);LWR.s=[];for(let i=0;i<36;i++)LWR.s.push({x:0,y:0,t:R(),l:.4});}
+function lwSplash(dt,rain){const nSp=[36,24,12,0][qTier]||0;LWR.sp.visible=nSp>0&&rain>.15;if(!LWR.sp.visible)return;LWR.sp.count=nSp;
+  for(let i=0;i<nSp;i++){const s=LWR.s[i];s.t+=dt;if(s.t>=s.l){s.t=0;s.l=.35+R()*.3;s.x=camX+(R()-.5)*420;s.y=camY+(R()-.5)*420;}
+    const k=s.t/s.l,r=2+k*8*(k>.85?(1-k)/.15:1);LWD.rotation.set(0,0,0);LWD.scale.set(r,1,r);LWD.position.set(s.x,groundY(s.x,s.y)+.4,s.y);LWD.updateMatrix();LWR.sp.setMatrixAt(i,LWD.matrix);}
+  LWR.sp.instanceMatrix.needsUpdate=true;}
+/* ---- police: light flashes on the surroundings (additive sprites, no real lights) ---- */
+const LWSR=[0,1,2].map(()=>{const s=new THREE.Sprite(new THREE.SpriteMaterial({map:radialTex('rgba(255,255,255,.9)','rgba(255,255,255,0)'),fog:false,depthWrite:false,transparent:true,blending:THREE.AdditiveBlending}));s.visible=false;scene.add(s);return s;});
+function lwSirens(nk){let n=0;
+  if(state==='play'&&wanted>0){const cand=[];for(const c of cars){if(c.kind!=='cop'||c.hp<=0)continue;const d=dist(c.x,c.y,player.x,player.y);if(d<520)cand.push([d,c]);}
+    cand.sort((a,b)=>a[0]-b[0]);
+    for(let i=0;i<3&&i<cand.length;i++){const c=cand[i][1],s=LWSR[i];s.visible=true;s.position.set(c.x,26,c.y);s.material.color.set((Math.floor(T*8)+i)%2?0xff2846:0x3c78ff);s.material.opacity=(.22+.5*nk)*clamp(wanted/3,.5,1);const sc=230+nk*130;s.scale.set(sc,sc,1);n++;}}
+  for(let i=n;i<3;i++)LWSR[i].visible=false;}
+/* ---- police helicopter: the searchlight sweeps wider at night ---- */
+const lwV3=new THREE.Vector3();
+function lwHeli(nk){if(!heli||heli.falling)return;const h=heli,r=24+nk*100,gx=player.x+Math.cos(T*.9)*r,gz=player.y+Math.sin(T*.67)*r*.8,gy=groundY(gx,gz)+.6;
+  tmpV.set(h.x,h.alt-6,h.y);tmpV2.set(gx,gy,gz);const len=tmpV.distanceTo(tmpV2);
+  searchCone.position.copy(tmpV2);searchCone.scale.set(26+nk*16,len,26+nk*16);lwV3.copy(tmpV).sub(tmpV2).normalize();searchCone.quaternion.setFromUnitVectors(UPV,lwV3);
+  searchPool.position.set(gx,gy+.2,gz);searchPool.scale.set(110+nk*70,1,110+nk*70);searchCone.material.opacity=.02+.1*nk;searchPool.material.opacity=.3+.7*nk;}
+/* ---- pedestrian poses (wrapped around animPed) ---- */
+const LW_PHONE=basic('#bfe8ff');
+{const _ap=animPed;animPed=function(m,p){_ap(m,p);if(!p.alive||p.stumble>0)return;const u=m.userData;
+  if(u.phone&&u.phone.visible&&!(p.cheer>0&&p.film))u.phone.visible=false;
+  if(p.dive>0){const k=1-p.dive/.45;m.rotation.y=-p.diveA;u.inner.rotation.z=Math.min(1.25,k*4);u.inner.position.y=Math.sin(Math.min(1,k)*PI)*5;u.arms[0].rotation.z=u.arms[1].rotation.z=2.7;u.legs[0].rotation.z=.8;u.legs[1].rotation.z=-.8;return;}
+  if(p.scared>0){u.arms[0].rotation.z=2.6+Math.sin(T*20+p.step)*.35;u.arms[1].rotation.z=2.6-Math.sin(T*20+p.step)*.35;return;}
+  if(p.cheer>0){u.legs[0].rotation.z=u.legs[1].rotation.z=0;u.inner.position.y=Math.abs(Math.sin(T*8+p.step))*2.6;
+    if(p.film){u.arms[0].rotation.z=u.arms[1].rotation.z=1.55;if(!u.phone){u.phone=part(LW_PHONE,.5,3.2,2,1.3,-7.4,0,u.arms[0]);}u.phone.visible=true;}
+    else{u.arms[0].rotation.z=2.5+Math.sin(T*13)*.5;u.arms[1].rotation.z=2.5+Math.sin(T*13+2)*.5;}}};}
+/* ---- per-frame update ---- */
+function lwSkyStop(i,dayK,warm,grey,out){const N_=['#04050d','#0d0f26','#2b2148','#46305a','#1b1a3a','#1b1a3a'],D_=['#2a62b8','#4f90d8','#a9cdee','#cfe3f2','#9db4c8','#9db4c8'],W_=[null,'#6a5a98','#e8906a','#ffb27a','#c88a86',null];
+  out.set(N_[i]).lerp(lwC3.set(D_[i]),dayK);if(warm>0&&W_[i])out.lerp(lwC3.set(W_[i]),warm*.75);
+  if(grey>0){const l=.2+.42*dayK;out.lerp(lwC3.setRGB(l,l*1.03,l*1.1),grey);}return out;}
+function lwFrame(){
+  const now=performance.now(),dt=Math.min(.1,(now-LW3.pT)/1000);LW3.pT=now;LW3.rt+=dt;
+  const el=Math.sin(LW.ph*TAU),dayK=lwSm(-.22,.3,el),nk=1-dayK,warm=Math.pow(clamp(1-Math.abs(el)/.38,0,1),1.4),rain=LW.rain,fog=LW.fog,grey=clamp(rain*.7+fog*.55,0,.85);
+  const winK=clamp((nk-.2)/.5,0,1),lightsK=Math.max(winK,rain>.3?rain*.9:0,fog*.6);
+  // sky gradient + fog colour (redrawn a few times per second only when something changed)
+  if(now-LW3.skyT>140&&(Math.abs(dayK-LW3.sky[0])>.003||Math.abs(warm-LW3.sky[1])>.01||Math.abs(grey-LW3.sky[2])>.01)){LW3.skyT=now;LW3.sky=[dayK,warm,grey];
+    const g=skyTex.image.getContext('2d'),gr=g.createLinearGradient(0,0,0,512),O=[0,.32,.47,.5,.53,1];
+    for(let i=0;i<6;i++){lwSkyStop(i,dayK,warm,grey,lwC1);gr.addColorStop(O[i],'#'+lwC1.getHexString());if(i===4)LW3.fogN.copy(lwC1);}
+    g.fillStyle=gr;g.fillRect(0,0,4,512);skyTex.needsUpdate=true;}
+  FOGC.copy(LW3.fogN);
+  scene.fog.density=.00072+fog*.0017+rain*.0006;
+  const hm=LW3.hemi;if(hm){hm.color.set(0x7d84cc).lerp(lwC1.set(0xcfe0ff),dayK);if(warm>0)hm.color.lerp(lwC1.set(0xffb890),warm*.3*dayK);hm.groundColor.set(0x2a1e2c).lerp(lwC1.set(0x7a6a58),dayK);hm.intensity=lwMix(.65,1.12,dayK)*(1-.25*grey);}
+  moon.color.set(0xb0c0ff).lerp(lwC1.set(0xfff0d8),dayK);if(warm>0&&dayK>0)moon.color.lerp(lwC1.set(0xffa860),warm*.55);moon.intensity=lwMix(.55,1.0,dayK)*(1-.55*grey);
+  moon.position.set(lwMix(-600,-Math.cos(LW.ph*TAU)*900,dayK),lwMix(900,Math.max(160,el*900+120),dayK),-300);
+  // sun and moon sprites
+  {const cx=camera.position.x,cy=camera.position.y,cz=camera.position.z,sx=-Math.cos(LW.ph*TAU),sy=el,sz=-.4,l=Math.hypot(sx,sy,sz),R5=5200;
+    LW3.sun.position.set(cx+sx/l*R5,cy+sy/l*R5,cz+sz/l*R5);LW3.sun.visible=el>-.12&&grey<.8;LW3.sun.material.opacity=clamp((el+.12)*4,0,1)*(1-grey);lwC1.set(0xffffff).lerp(lwC2.set(0xff9a50),warm);LW3.sun.material.color.copy(lwC1);
+    MOON.position.set(cx-sx/l*R5,cy-sy/l*R5,cz-sz/l*R5);MOON.material.opacity=clamp((nk-.3)*2,0,1)*(1-grey);MOON.visible=MOON.material.opacity>.01&&-el>-.12;}
+  STARS.material.opacity=.85*clamp((nk-.45)/.45,0,1)*(1-grey);STARS.visible=STARS.material.opacity>.01;
+  if(LW3.dots)LW3.dots.opacity=.12+winK*.88;
+  if(LW3.skyline)for(const m of LW3.skyline)m.color.set(0x100f22).lerp(lwC1.set(0x8aa0b8),dayK).lerp(LW3.fogN,grey*.8);
+  sky.material.color.setScalar(1-.18*rain);
+  // windows, signs, lamps, headlights
+  for(const m of LWE)m.emissiveIntensity=m.userData.lwE*winK;
+  for(const m of SIGNS)m.color.setScalar(.4+.6*winK);
+  {const L=LWREF.lamp;if(L){L.poolMat.opacity=winK;L.floodPool.opacity=winK;L.bulbMat.color.set(0x6a6660).lerp(lwC1.set(0xffe2b0),winK);L.floodMat.color.set(0x707078).lerp(lwC1.set(0xfff4d8),winK);}}
+  headMat.color.set(0x6b6a60).lerp(lwC1.set(0xfff8e0),lightsK);tailMat.color.set(0x5a0e16).lerp(lwC1.set(0xff1e30),lightsK);
+  coneMat.opacity=.045*lightsK;headPool.material.opacity=lightsK;
+  // water, wet road, bloom, reflections
+  waterMat.color.set(0x0a1830).lerp(lwC1.set(0x1d5f8a),dayK).lerp(LW3.fogN,grey*.5);
+  {const am=asphalt.material;am.color.setScalar(1-.45*LW.wet);am.roughness=.58-.36*LW.wet;am.metalness=.25+.3*LW.wet;}
+  if(bloom)bloom.strength=.62*(1-.55*dayK);
+  {const e=dayK>(LW3.env==='d'?.42:.58)?'d':'n';if(e!==LW3.env){LW3.env=e;scene.environment=e==='d'?LW3.envDay:LW3.envNight;}}
+  // wind
+  LWU.t.value=LW3.rt;LWU.k.value=1+rain*1.3;
+  // rain
+  {const tier=qTier,cnt=[1400,900,300,0][tier],on=rain>.02&&cnt>0;LWR.mesh.visible=on;
+    if(on){LWR.mat.uniforms.uT.value=LW3.rt;LWR.mat.uniforms.uC.value.set(camX,0,camY);LWR.mat.uniforms.uA.value=.5*Math.min(1,rain*1.5);LWR.mesh.geometry.setDrawRange(0,Math.floor(cnt*(.3+.7*rain))*2);}
+    lwSplash(dt,rain);}
+  // ambient life (only what is near the player is touched)
+  lwBirds(dt,nk);lwSteam(dt);lwPlane(dt);
+  for(const c of LWM.cranes){const near=Math.abs(c.x-camX)<1700&&Math.abs(c.z-camY)<1700;c.g.visible=near;if(!near)continue;
+    const a=T*.16+c.ph,tx=c.x+30+(Math.sin(a)*.5+.5)*230,len=26+(Math.sin(a*1.7+1)*.5+.5)*95;
+    c.g.position.set(tx,166,c.z);c.sw.rotation.set(Math.sin(T*1.1+c.ph)*.05,0,Math.cos(T*.9+c.ph)*.06);c.sw.position.y=0;
+    c.cab.scale.set(.7,len,.7);c.cab.position.y=-len/2-2.5;c.ct.position.y=-len-6;}
+  {const tl=LWM.tl,blinkNight=nk>.85;for(const l of tl){if(Math.abs(l.x-camX)>1200||Math.abs(l.z-camY)>1200)continue;
+      let st;if(blinkNight&&l.i%3===0)st=Math.floor(T*1.4)%2?1:3;else{const ph=(T+l.off)%14;st=ph<6?2:ph<7.2?1:0;}
+      if(st!==l.st){l.st=st;LWM.tlSet(l,st);}}}
+  lwSirens(nk);lwHeli(nk);
+  // red/blue screen edge at high wanted levels (CSS only)
+  {const v=state==='play'&&!paused&&wanted>=3?clamp((wanted-2)*.38,0,1):0;if(v!==LW3.vg){LW3.vg=v;const e=$('lwVig');e.classList.toggle('on',v>0);e.style.opacity=v;}}
+}
+/* === END LIVING WORLD (3D) === */
 
 /* ---------- Power-up & shield visuals ---------- */
 const powMeshes=new Map(),powGeo=new THREE.OctahedronGeometry(7,0),powBeamGeo=new THREE.CylinderGeometry(8,8,200,16,1,true),powRingGeo=new THREE.RingGeometry(14,18,32).rotateX(-PI/2);
@@ -2743,6 +2990,11 @@ function buildLangList(){const L=$('langList');L.innerHTML='';for(const[code,nam
 let langReturn=null;
 function updGfx(){$('gfxBtn').textContent=tr('Grafik')+': '+tr(gfxMode==='auto'?'Auto':gfxMode==='high'?'Hög':'Låg');}
 $('gfxBtn').addEventListener('click',()=>{gfxMode=gfxMode==='auto'?'high':gfxMode==='high'?'low':'auto';try{localStorage.setItem('hh-gfx',gfxMode);}catch(e){}qTier=gfxMode==='high'?0:gfxMode==='low'?3:1;applyQuality();updGfx();sfx('click');});
+/* === LIVING WORLD (settings) === */
+function updWx(){const b=$('wxBtn');if(b)b.textContent=tr('Väder')+': '+tr(LW.wx?'På':'Av');}
+$('wxBtn').addEventListener('click',()=>{LW.wx=!LW.wx;try{localStorage.setItem('hh-wx',LW.wx?'1':'0');}catch(e){}LW.wxTimer=LW.wx?4:60;updWx();sfx('click');});
+{const _sl=setLang;setLang=function(c){_sl(c);updWx();};}updWx();
+/* === END LIVING WORLD (settings) === */
 $('langBtn').addEventListener('click',()=>{langReturn=null;buildLangList();showScreen('langs',true);setTimeout(()=>{const f=$('lang-'+LANG);if(f)f.focus();},40);});
 buildLangList();setLang(LANG);
 setTimeout(()=>{const f=$('lang-'+LANG);if(f)f.focus();},60);
@@ -2860,7 +3112,7 @@ function lerpOut(){const S=lerpSaved;for(let i=S.length-5;i>=0;i-=5){const o=S[i
 let acc=0,last=performance.now();
 function frame(now){const rdt=Math.min(.1,(now-last)/1000);autoQuality(rdt);acc=paused?0:Math.min(DT*4,acc+rdt*(slowT>0?.35:1));if(slowT>0)slowT-=rdt;last=now;
   while(acc>=DT){snapPrev();tick();acc-=DT;for(const k in pressed)delete pressed[k];touch.actP=false;touch.enterP=false;touch.swapP=false;}
-  lerpIn(paused?1:acc/DT);updateCamera(rdt*60);syncScene();lerpOut();vfxUpdate(paused?0:rdt);syncPowerups();syncCombat();syncMode();audioUpdate();if(!$('skins').hidden)renderSkinPreview();renderFrame();renderMini();renderModeMini();renderHud();renderModeHud();requestAnimationFrame(frame);}
+  lerpIn(paused?1:acc/DT);updateCamera(rdt*60);syncScene();lerpOut();vfxUpdate(paused?0:rdt);syncPowerups();syncCombat();lwFrame();syncMode();audioUpdate();if(!$('skins').hidden)renderSkinPreview();renderFrame();renderMini();renderModeMini();renderHud();renderModeHud();requestAnimationFrame(frame);}
 /* === REWARD FX ===========================================================
    Reward animations. DOM + CSS + Web Animations only, no extra 3D cost.
    Public API (screen pixel coordinates, all safe to call at any time):
