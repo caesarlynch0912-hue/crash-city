@@ -326,6 +326,11 @@ button.bpt{cursor:pointer}button.bpt:hover,button.bpt:focus{outline:none;border-
 .langlist .mitem{font-size:clamp(26px,4vw,38px)}
 .langlist .mitem.primary{font-size:clamp(30px,4.6vw,44px)}
 @media (prefers-reduced-motion:reduce){#stars.cool span.on{animation:none;opacity:.5}}
+/* === GAME MODES (css) === */
+.mdesc{font-size:13px;line-height:1.35;color:rgba(242,234,216,.72);max-width:34ch;margin:-2px 0 8px;min-height:1.35em}
+#modeobj{top:calc(92px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);background:var(--panel);padding:4px 12px;font-weight:700;font-size:13px;letter-spacing:.06em;white-space:nowrap;border-bottom:2px solid var(--signal);text-shadow:0 1px 0 #000;font-variant-numeric:tabular-nums;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
+#modeobj.low{border-bottom-color:var(--heat);color:var(--heat)}
+@media (max-width:820px){#modeobj{top:calc(198px + env(safe-area-inset-top,0px))}}
 </style>
 </head>
 <body>
@@ -351,6 +356,7 @@ button.bpt{cursor:pointer}button.bpt:hover,button.bpt:focus{outline:none;border-
   <svg viewBox="0 0 34 34" aria-hidden="true"><path id="carrow" d="M17 3 L28 28 L17 22 L6 28 Z" fill="#ffd23f" stroke="#000" stroke-width="2" stroke-linejoin="round"/></svg>
   <span id="cdist">0 m</span>
 </div>
+<div id="modeobj" class="hud" hidden></div>
 <div id="feed" class="hud" aria-live="polite"></div>
 <div id="weapon" class="hud" hidden><div id="wname">Pistol</div><div id="wammo">∞</div><div id="wslots"></div></div>
 <div id="hint" class="hud" hidden><kbd id="hintkey">E</kbd><span>Ta bilen</span></div>
@@ -383,6 +389,8 @@ button.bpt{cursor:pointer}button.bpt:hover,button.bpt:focus{outline:none;border-
     <h1 class="title">Crash<br>City</h1>
     <nav class="mlist" aria-label="Huvudmeny">
       <button id="play" class="mitem primary">Spela</button>
+      <button id="modeStart" class="mitem">Läge</button>
+      <div id="modeDesc" class="mdesc"></div>
       <button id="gStart" class="mitem">Garage</button>
       <button id="skStart" class="mitem">Skins</button>
       <button id="bpStart" class="mitem">Battle Pass</button>
@@ -606,6 +614,8 @@ Object.assign(DICT,{
 "Gummiätaren":["Rubber Burner","Gummiverbrenner","Brûleur de gomme","Quemagomas","Gummibrænderen","Gummibrenneren"],
 "Nära ögat":["Close Call","Knapp daneben","Frôlement","Por los pelos","Tæt på","Nære på"]
 });
+/* === GAME MODES (strings) === */
+Object.assign(DICT,{"Läge":["Mode","Modus","Mode","Modo","Tilstand","Modus"],"Överlevnad":["Survival","Überleben","Survie","Supervivencia","Overlevelse","Overlevelse"],"Bankrån":["Heist","Banküberfall","Braquage","Atraco","Bankrøveri","Bankran"],"Tidsjakt":["Time Trial","Zeitfahren","Contre-la-montre","Contrarreloj","Tidsløb","Tidsjakt"],"Demolering":["Demolition","Zerstörung","Démolition","Demolición","Nedrivning","Demolering"],"Fly från polisen så länge du kan":["Run from the cops for as long as you can","Flieh so lange wie möglich vor der Polizei","Fuis la police le plus longtemps possible","Huye de la policía todo lo que puedas","Flygt fra politiet så længe du kan","Flykt fra politiet så lenge du kan"],"Rån banken och lämna bytet i gömstället. Fler stjärnor ger mer betalt.":["Rob the bank and drop the loot at the safehouse. More stars pay more.","Raube die Bank aus und bring die Beute ins Versteck. Mehr Sterne zahlen mehr.","Braque la banque et dépose le butin à la planque. Plus d'étoiles, plus de gains.","Atraca el banco y deja el botín en el escondite. Más estrellas pagan más.","Røv banken og aflever byttet i skjulestedet. Flere stjerner giver mere i løn.","Ran banken og lever byttet i gjemmestedet. Flere stjerner gir mer betalt."],"Ta checkpoints mot klockan. Varje checkpoint ger extra tid.":["Hit checkpoints against the clock. Every checkpoint adds time.","Fahre Checkpoints gegen die Uhr an. Jeder Checkpoint bringt Zeit.","Enchaîne les checkpoints contre la montre. Chacun ajoute du temps.","Pasa los puntos de control contra el reloj. Cada uno da tiempo extra.","Tag checkpoints mod uret. Hvert checkpoint giver ekstra tid.","Ta sjekkpunkter mot klokken. Hvert sjekkpunkt gir ekstra tid."],"Kvadda så många polisbilar du kan på 3 minuter.":["Wreck as many police cars as you can in 3 minutes.","Zerstöre in 3 Minuten so viele Polizeiautos wie möglich.","Détruis un maximum de voitures de police en 3 minutes.","Destruye tantos coches de policía como puedas en 3 minutos.","Smadr så mange politibiler du kan på 3 minutter.","Smadre så mange politibiler du kan på 3 minutter."],"Kör till banken":["Drive to the bank","Fahr zur Bank","Va à la banque","Ve al banco","Kør til banken","Kjør til banken"],"Stanna och ta bytet":["Stay and grab the loot","Bleib und schnapp die Beute","Reste et prends le butin","Quédate y coge el botín","Bliv og tag byttet","Bli og ta byttet"],"Kör bytet till gömstället":["Take the loot to the safehouse","Bring die Beute ins Versteck","Amène le butin à la planque","Lleva el botín al escondite","Kør byttet til skjulestedet","Kjør byttet til gjemmestedet"],"Checkpoint {n}":["Checkpoint {n}","Checkpoint {n}","Checkpoint {n}","Control {n}","Checkpoint {n}","Sjekkpunkt {n}"],"Kvadda poliser: {n}":["Cops wrecked: {n}","Polizisten zerstört: {n}","Flics détruits : {n}","Policías destruidos: {n}","Politibiler smadret: {n}","Politibiler smadret: {n}"],"Checkpoints":["Checkpoints","Checkpoints","Checkpoints","Controles","Checkpoints","Sjekkpunkter"],"BANKEN ÄR TÖMD":["BANK EMPTIED","BANK GELEERT","BANQUE VIDÉE","BANCO VACIADO","BANKEN ER TØMT","BANKEN ER TOMMET"],"Alarmet går! Kör till gömstället":["The alarm is on! Get to the safehouse","Der Alarm läuft! Ab ins Versteck","L'alarme sonne ! Fonce à la planque","¡Suena la alarma! Al escondite","Alarmen går! Kør til skjulestedet","Alarmen går! Kjør til gjemmestedet"],"BYTET LEVERERAT":["LOOT DELIVERED","BEUTE GELIEFERT","BUTIN LIVRÉ","BOTÍN ENTREGADO","BYTTET AFLEVERET","BYTTET LEVERT"],"{s} stjärnor betalar +{p} p":["{s} stars pay +{p} pts","{s} Sterne zahlen +{p} Pkt.","{s} étoiles paient +{p} pts","{s} estrellas pagan +{p} pts","{s} stjerner giver +{p} p","{s} stjerner gir +{p} p"],"CHECKPOINT":["CHECKPOINT","CHECKPOINT","CHECKPOINT","CONTROL","CHECKPOINT","SJEKKPUNKT"],"+{s} s extra tid":["+{s} s extra time","+{s} s Extrazeit","+{s} s de temps en plus","+{s} s de tiempo extra","+{s} s ekstra tid","+{s} s ekstra tid"],"TIDEN ÄR UTE":["TIME'S UP","ZEIT ABGELAUFEN","TEMPS ÉCOULÉ","SE ACABÓ EL TIEMPO","TIDEN ER GÅET","TIDEN ER UTE"],"Tid slut":["Time's up","Zeit ist um","Temps écoulé","Tiempo agotado","Tiden er gået","Tiden er ute"]});
 const PLACES={"sv":{"downtown":"centrum","suburb":"villaförorten","park":"stadsparken","harbor":"hamnen","forest":"skogen","farm":"åkrarna","beach":"stranden"},"en":{"downtown":"downtown","suburb":"the suburbs","park":"the city park","harbor":"the harbour","forest":"the forest","farm":"the fields","beach":"the beach"},"de":{"downtown":"Innenstadt","suburb":"Vorstadt","park":"Stadtpark","harbor":"Hafen","forest":"Wald","farm":"Felder","beach":"Strand"},"fr":{"downtown":"le centre-ville","suburb":"la banlieue","park":"le parc","harbor":"le port","forest":"la forêt","farm":"les champs","beach":"la plage"},"es":{"downtown":"el centro","suburb":"las afueras","park":"el parque","harbor":"el puerto","forest":"el bosque","farm":"los campos","beach":"la playa"},"da":{"downtown":"centrum","suburb":"villakvarteret","park":"byparken","harbor":"havnen","forest":"skoven","farm":"markerne","beach":"stranden"},"no":{"downtown":"sentrum","suburb":"villastrøket","park":"byparken","harbor":"havna","forest":"skogen","farm":"jordene","beach":"stranda"}};
 const placeName=b=>(PLACES[LANG]||PLACES.sv)[b]||b;
 function tr(s){if(LANG==='sv')return s;const e=DICT[s];return e&&e[LI[LANG]]!=null?e[LI[LANG]]:s;}
@@ -1049,8 +1059,8 @@ function updateWorld(){
   if(state==='play'){
     runT+=DT;
     const w=Math.min(5,1+Math.floor(runT/18));
-    if(w>wanted){wanted=w;toast('★'.repeat(w),'var(--heat)',w===5?tr('Maximal efterlysning'):tr('Fler poliser på väg'),1.4);sfx('alert');}
-    if(!military&&runT>=140){military=true;toast(tr('MILITÄREN'),'#9bd05a',tr('Pansarfordon på väg'),2.4);sfx('military');}
+    if(w>wanted&&MODE==='survival'){wanted=w;toast('★'.repeat(w),'var(--heat)',w===5?tr('Maximal efterlysning'):tr('Fler poliser på väg'),1.4);sfx('alert');}
+    if(!military&&runT>=140&&MODE==='survival'){military=true;toast(tr('MILITÄREN'),'#9bd05a',tr('Pansarfordon på väg'),2.4);sfx('military');}
     checkUnlocks();updateChals();if(player.car){chal('dist',Math.abs(player.car.v)*1e-4);chal('speed',Math.abs(player.car.v)*21.6);}chal('time',runT);
     for(const k in fx)if(fx[k]>0)fx[k]=Math.max(0,fx[k]-DT);
     addScore(DT*(6+wanted*5+(military?20:0)));
@@ -1150,7 +1160,7 @@ function switchW(dir){const own=ownedW();if(own.length<2)return;let i=own.indexO
 function selectW(n){const w=WEAPONS[n];if(w&&arsenal[w.id]>0){wIdx=n;sfx('click');}}
 function pushFeed(text,col){feed.unshift({text,col,t:2.6});if(feed.length>4)feed.length=4;}
 function los(x0,y0,x1,y1){const d=dist(x0,y0,x1,y1),n=Math.ceil(d/18);for(let i=1;i<n;i++){const t=i/n;if(solid(x0+(x1-x0)*t,y0+(y1-y0)*t))return false;}return true;}
-function onWreck(c){wrecks++;combo=comboT>0?combo+1:1;comboT=4;chal('wreck',1);chal('combo',combo);const base=c.kind==='army'?400:150,mult=fx.x2>0?2:1;addScore(base*combo);
+function onWreck(c){modeWreck(c);wrecks++;combo=comboT>0?combo+1:1;comboT=4;chal('wreck',1);chal('combo',combo);const base=c.kind==='army'?400:150,mult=fx.x2>0?2:1;addScore(base*combo);
   pushFeed((c.kind==='army'?tr('PANSAR KVADDAT'):tr('POLISBIL KVADDAD'))+' +'+fmtScore(base*combo*mult)+(combo>1?'  ×'+combo:''),c.kind==='army'?'#9bd05a':'#6aa8ff');}
 function aimAt(ox,oy,base){let best=null,bd=.3;
   for(const c of cars){if(!isEnemy(c)||c.hp<=0)continue;const d=dist(ox,oy,c.x,c.y);if(d>650)continue;const da=Math.abs(angDiff(Math.atan2(c.y-oy,c.x-ox),base));if(da<bd&&los(ox,oy,c.x,c.y)){bd=da;best=c;}}
@@ -1556,15 +1566,16 @@ function updateJack(){const j=player.jack,c=j.c;j.t+=DT;c.v*=.5;if(c.ai||isEnemy
   else{c.doorOpen=j.t<.16?1:Math.max(0,1-(j.t-.16)*5);player.x+=(c.x-player.x)*.16;player.y+=(c.y-player.y)*.16;player.a=lerpAngle(player.a,c.a,.25);
     if(j.t>.4){player.jack=null;c.doorOpen=0;takeCar(c);chal('jack',1);sfx('door',c.x,c.y);}}}
 
-function endRun(kind){if(state!=='play')return;updateBP();saveBP();achEndRun();progAward();state='dead';deadT=2.4;deadKind=kind;sfx(kind);saveWallet();
+function endRun(kind){if(state!=='play')return;updateBP();saveBP();achEndRun();progAward();state='dead';deadT=2.4;deadKind=kind;sfx(kind);saveWallet();modeEnd();
   if(player.car)exitCar(false);
-  toast(kind==='busted'?'BUSTED':'WASTED',kind==='busted'?'#6aa8ff':'var(--heat)',null,2.4,true);bustT=0;
-  if(score>best){best=Math.floor(score);try{localStorage.setItem('hh-best',String(best));}catch(e){}}}
+  if(!modeEndToast())toast(kind==='busted'?'BUSTED':'WASTED',kind==='busted'?'#6aa8ff':'var(--heat)',null,2.4,true);bustT=0;
+  if(MODE==='survival'&&score>best){best=Math.floor(score);try{localStorage.setItem('hh-best',String(best));}catch(e){}}}
 function showOver(){state='over';const o=document.getElementById('over'),t=document.getElementById('overTitle');
   t.textContent=deadKind==='busted'?'Busted':'Wasted';t.className='title';o.classList.toggle('busted',deadKind==='busted');o.classList.toggle('wasted',deadKind!=='busted');
   document.getElementById('overSub').textContent=Math.floor(score)>=best&&score>0?tr('Nytt rekord!'):military?tr('Militären tog dig'):tr('Jakten är över');
   document.getElementById('oTime').textContent=fmtTime(runT);document.getElementById('oScore').textContent=fmtScore(score);
   document.getElementById('oBest').textContent=fmtScore(best);document.getElementById('oWrecks').textContent=String(wrecks);document.getElementById('oCoins').textContent='+'+runCoins;
+  modeOver();
   progOver();o.hidden=false;overAt=performance.now();for(const k in keys)keys[k]=false;setTimeout(()=>{if(state==='over')document.getElementById('again').focus();},1200);}
 let overAt=0;
 function resetRun(){
@@ -1573,8 +1584,74 @@ function resetRun(){
   score=0;bpCounted=0;progDone=false;runT=0;wanted=1;military=false;bustT=0;blockT=10;player.z=0;player.vz=0;powerT=2;wrecks=0;runCoins=0;coinChain=0;saveWallet();player.hp=100;player.car=null;
   const c=makeCar((N/2)*CELL+60-LANE,(N/2)*CELL+ROAD+60,PI/2,'civ');applySpec(c,selectedSpec());progApplyCar(c);c.ai=false;cars.push(c);
   player.x=c.x;player.y=c.y;player.a=c.a;player.jack=null;takeCar(c);camA=player.a;resetChals();player.nitro=1;player.nitroOn=false;player.nitroWait=0;
-  hideScreens();paused=false;state='play';toast(tr('KÖR!'),'var(--signal)',tr('Polisen är efter dig'),1.4,true);
+  hideScreens();paused=false;state='play';toast(tr('KÖR!'),'var(--signal)',tr('Polisen är efter dig'),1.4,true);modeReset();
 }
+
+/* === GAME MODES (logic) ===
+   Survival is the original game. Heist, Time Trial and Demolition reuse the same city, cops and coins.
+   Each mode has its own best score (localStorage 'hh-modes'), one target (GM.tgt) and a one-line objective. */
+const MODES=['survival','heist','trial','demo'];
+const MODE_INFO={
+  survival:{name:'Överlevnad',desc:'Fly från polisen så länge du kan'},
+  heist:{name:'Bankrån',desc:'Rån banken och lämna bytet i gömstället. Fler stjärnor ger mer betalt.',unit:'Poäng'},
+  trial:{name:'Tidsjakt',desc:'Ta checkpoints mot klockan. Varje checkpoint ger extra tid.',unit:'Checkpoints'},
+  demo:{name:'Demolering',desc:'Kvadda så många polisbilar du kan på 3 minuter.',unit:'Kvaddade'}};
+let MODE='survival';const modeBest={heist:0,trial:0,demo:0};
+try{const m=JSON.parse(localStorage.getItem('hh-modes')||'null');if(m){if(MODES.includes(m.sel))MODE=m.sel;
+  for(const k in modeBest)modeBest[k]=Math.max(0,Math.floor(+(m.best&&m.best[k])||0)||0);}}catch(e){}
+function saveModes(){try{localStorage.setItem('hh-modes',JSON.stringify({sel:MODE,best:modeBest}));}catch(e){}}
+const MODE_RAD=70;
+let GM={live:false,phase:0,n:0,pay:0,wr:0,left:0,hold:0,carry:0,tgt:null,fin:'',newBest:false,final:0};
+const modeScore=()=>MODE==='heist'?GM.pay:MODE==='trial'?GM.n:MODE==='demo'?GM.wr:0;
+// Pick a road point for the next target and keep a gap to the player. Distances are in world units (a car covers ~400 per second).
+function modeNewTarget(){let lo,hi,col;
+  if(MODE==='heist'){if(GM.phase===0){lo=1800;hi=3200;col='#ffd23f';}else{lo=1400;hi=2600;col='#7dffa8';}}else{lo=600;hi=1300;col='#3de0ff';}
+  let p=null;for(let k=0;k<6&&!p;k++)p=roadPoint(lo*(1-k*.12),hi*(1+k*.25));
+  if(!p)p={x:clamp(player.x+lo,200,WORLD-200),y:clamp(player.y,200,WORLD-200)};
+  GM.tgt={x:p.x,y:p.y,col,leg:dist(p.x,p.y,player.x,player.y)};}
+function modeReset(){
+  GM={live:true,phase:0,n:0,pay:0,wr:0,left:0,hold:0,carry:0,tgt:null,fin:'',newBest:false,final:0};
+  if(MODE==='survival')return;
+  if(MODE==='heist'){wanted=1;}
+  else if(MODE==='trial'){wanted=0;GM.left=30;}
+  else if(MODE==='demo'){wanted=3;GM.left=180;}
+  if(MODE!=='demo')modeNewTarget();
+  notify(tr(MODE_INFO[MODE].name),'#ffd23f',tr(MODE_INFO[MODE].desc),3.2);}
+function modeFinish(kind){GM.fin=kind;endRun('busted');}
+// Called when a run ends: save the mode best and hide the marker.
+function modeEnd(){if(!GM.live)return;GM.live=false;GM.final=modeScore();GM.newBest=false;
+  if(MODE!=='survival'&&GM.final>modeBest[MODE]){modeBest[MODE]=GM.final;GM.newBest=true;saveModes();}GM.tgt=null;}
+function modeEndToast(){if(!GM.fin)return false;toast(tr('TIDEN ÄR UTE'),'#ffd23f',null,2.4,true);return true;}
+function modeWreck(c){if(MODE!=='demo'||!GM.live||state!=='play')return;GM.wr+=c.kind==='army'?3:1;wallet+=2;runCoins+=2;
+  const w=Math.min(5,3+Math.floor(GM.wr/10));if(w>wanted){wanted=w;toast('★'.repeat(w),'var(--heat)',null,1.2);sfx('alert');}}
+// After a delivery the cops that are far away give up, so the heat drops for a moment.
+function modeCoolDown(){for(let i=cars.length-1;i>=0;i--){const c=cars[i];if(isEnemy(c)&&c.hp>0&&dist(c.x,c.y,player.x,player.y)>450)cars.splice(i,1);}}
+function updateMode(){if(state!=='play'||!GM.live||MODE==='survival')return;
+  if(MODE==='demo'){GM.left-=DT;if(GM.left<=0)modeFinish('time');return;}
+  const t=GM.tgt;if(!t)return;const d=dist(t.x,t.y,player.x,player.y),inside=d<MODE_RAD;
+  if(MODE==='trial'){GM.left-=DT;
+    if(inside){GM.n++;const bonus=Math.round(Math.max(4,(3+t.leg/260)*Math.max(.6,1-GM.n*.03)));
+      GM.left+=bonus;wallet+=2;runCoins+=2;addScore(100+GM.n*20);burst(t.x,t.y,'#3de0ff',24,4,12);sfx('coin',undefined,undefined,8);
+      toast(tr('CHECKPOINT')+' '+GM.n,'#3de0ff',trf('+{s} s extra tid',{s:bonus}),1.4);modeNewTarget();}
+    if(GM.left<=0)modeFinish('time');return;}
+  if(MODE==='heist'){
+    if(GM.phase===0){
+      if(inside){GM.hold+=DT;if(GM.hold>=1.2){GM.phase=1;GM.hold=0;GM.carry=0;wanted=4;burst(t.x,t.y,'#ffd23f',40,5,14);sfx('alert');
+        toast(tr('BANKEN ÄR TÖMD'),'#ffd23f',tr('Alarmet går! Kör till gömstället'),2.4);modeNewTarget();}}
+      else GM.hold=Math.max(0,GM.hold-DT*2);}
+    else{GM.carry+=DT;const w=GM.carry>30?5:4;if(w>wanted){wanted=w;toast('★'.repeat(w),'var(--heat)',null,1.2);sfx('alert');}
+      if(inside){const stars=wanted,pay=700*stars+Math.max(0,Math.round(60-GM.carry))*20;
+        GM.pay+=pay;GM.n++;GM.phase=0;GM.hold=0;wallet+=10*stars;runCoins+=10*stars;addScore(pay);wanted=1;modeCoolDown();
+        burst(t.x,t.y,'#7dffa8',40,5,14);sfx('key');
+        toast(tr('BYTET LEVERERAT'),'#7dffa8',trf('{s} stjärnor betalar +{p} p',{s:stars,p:fmtScore(pay)}),2.4);modeNewTarget();}}}}
+// Game-over screen for the extra modes: title, record line and the score/record labels.
+let modeDtSet=false;
+function modeOver(){const q=id=>document.getElementById(id),dS=q('oScore').previousElementSibling,dB=q('oBest').previousElementSibling;
+  if(MODE==='survival'){if(modeDtSet&&dS&&dB){dS.textContent=tr('Poäng');dB.textContent=tr('Rekord');}modeDtSet=false;return;}
+  const u=tr(MODE_INFO[MODE].unit);modeDtSet=true;if(dS)dS.textContent=u;if(dB)dB.textContent=tr('Rekord');
+  if(GM.fin)q('overTitle').textContent=tr('Tid slut');
+  q('overSub').textContent=tr(MODE_INFO[MODE].name)+': '+fmtScore(GM.final)+' '+u+(GM.newBest?' · '+tr('Nytt rekord!'):'');
+  q('oScore').textContent=fmtScore(GM.final);q('oBest').textContent=fmtScore(modeBest[MODE]);}
 
 function tick(){
   T+=DT;
@@ -1583,7 +1660,7 @@ function tick(){
   if(state!=='start'){
     for(let i=cars.length-1;i>=0;i--){const c=cars[i];if(c===player.car)continue;
       if(isEnemy(c))updateCop(c);else if(c.ai&&c.hp>0)updateCiv(c);else drive(c,0,0,true);}
-    collide();for(const p of peds)updatePed(p);updateWorld();updateCombat();updateBP();
+    collide();for(const p of peds)updatePed(p);updateWorld();updateMode();updateCombat();updateBP();
   }else{for(let i=cars.length-1;i>=0;i--){const c=cars[i];if(c.ai)updateCiv(c);}for(const p of peds)updatePed(p);player.a+=.0025;}
   if(toastT>0){toastT-=DT;if(toastT<=0)toastEl.classList.remove('show');}
   if(shake>0)shake*=.88;
@@ -2421,13 +2498,13 @@ function backScreen(){const prev=screenBack.pop()||(paused?'pause':state==='over
 function hideScreens(){for(const s of SCREENS)$(s).hidden=true;screenBack=[];}
 function openGarage(){showScreen('garage',true);}
 function closeGarage(){updateSelLine();backScreen();}
-function updateStartFoot(){progBadge();$('bestStart').textContent=best>0?trf('Rekord: {p} p',{p:fmtScore(best)}):tr('Inget rekord än');}
+function updateStartFoot(){progBadge();if(modeFoot())return;$('bestStart').textContent=best>0?trf('Rekord: {p} p',{p:fmtScore(best)}):tr('Inget rekord än');}
 function pauseGame(){if(state!=='play'||paused)return;paused=true;{const pc=$('pchal');pc.innerHTML='';for(const c of chals){const d=document.createElement('div');d.textContent=(c.done?'✓ ':'· ')+chalText(c)+(c.done?'':'  —  '+chalProg(c)+'  ·  +'+fmtScore(c.rw)+' '+tr('p'));pc.appendChild(d);}}for(const k in keys)keys[k]=false;mouseFire=false;touch.fire=false;showScreen('pause',false);screenBack=[];}
 function resumeGame(){if(!paused)return;paused=false;hideScreens();sfx('click');}
 function quitToMenu(){if(state==='play'){updateBP();progAward();}saveBP();paused=false;if(player.car)exitCar(false);for(let i=cars.length-1;i>=0;i--)if(isEnemy(cars[i]))cars.splice(i,1);
   resetCombat();for(const k in fx)fx[k]=0;wanted=0;military=false;bustT=0;
-  if(score>best){best=Math.floor(score);try{localStorage.setItem('hh-best',String(best));}catch(e){}}
-  state='start';updateStartFoot();updateSelLine();screenBack=[];showScreen('start',false);}
+  if(MODE==='survival'&&score>best){best=Math.floor(score);try{localStorage.setItem('hh-best',String(best));}catch(e){}}
+  modeEnd();state='start';updateStartFoot();updateSelLine();screenBack=[];showScreen('start',false);}
 $('bpStart').addEventListener('click',()=>showScreen('bpass',true));$('bpBack').addEventListener('click',backScreen);
 $('gStart').addEventListener('click',openGarage);$('skStart').addEventListener('click',()=>{previewSkinId=skinId;showScreen('skins',true);});$('skBack').addEventListener('click',backScreen);$('gOver').addEventListener('click',openGarage);$('gback').addEventListener('click',closeGarage);
 $('hStart').addEventListener('click',()=>showScreen('howto',true));$('hBack').addEventListener('click',backScreen);
@@ -2524,6 +2601,42 @@ function renderSkinPreview(){const c2=$('skinView');
   const t=performance.now()/1000;skinModel.rotation.y=t*.7;poseHero(skinModel,{speed:0});
   const lk=!skinOK(SKINS.find(s=>s.id===id));c2.classList.toggle('locked',lk);skinR.render(skinScene,skinCam);}
 
+/* === GAME MODES (ui + render) === */
+// Start-screen button: cycles the mode and shows its description. Also refreshes the record line.
+function modeFoot(){const b=$('modeStart');if(!b)return false;
+  b.textContent=tr('Läge')+': '+tr(MODE_INFO[MODE].name);$('modeDesc').textContent=tr(MODE_INFO[MODE].desc);
+  if(MODE==='survival')return false;
+  const v=modeBest[MODE];$('bestStart').textContent=v>0?tr('Rekord')+': '+fmtScore(v)+' '+tr(MODE_INFO[MODE].unit):tr('Inget rekord än');return true;}
+$('modeStart').addEventListener('click',()=>{if(state!=='start')return;MODE=MODES[(MODES.indexOf(MODE)+1)%MODES.length];saveModes();sfx('click');updateStartFoot();});
+// A beam and a ring at the target. Not affected by fog so it can be seen from far away.
+const modeBeamMat=new THREE.MeshBasicMaterial({color:0xffd23f,transparent:true,opacity:.3,blending:THREE.AdditiveBlending,depthWrite:false,fog:false,side:THREE.DoubleSide});
+const modeRingMat=new THREE.MeshBasicMaterial({color:0xffd23f,transparent:true,opacity:.7,blending:THREE.AdditiveBlending,depthWrite:false,fog:false,side:THREE.DoubleSide});
+const modeBeacon=new THREE.Group();
+{const beam=new THREE.Mesh(new THREE.CylinderGeometry(12,12,420,18,1,true),modeBeamMat);beam.position.y=210;modeBeacon.add(beam);
+ const ring=new THREE.Mesh(new THREE.RingGeometry(MODE_RAD-14,MODE_RAD,40).rotateX(-PI/2),modeRingMat);ring.position.y=.8;modeBeacon.add(ring);
+ modeBeacon.visible=false;scene.add(modeBeacon);}
+function syncMode(){const t=GM.tgt,on=!!t&&GM.live&&MODE!=='survival'&&state==='play';modeBeacon.visible=on;if(!on)return;
+  modeBeacon.position.set(t.x,0,t.y);modeBeamMat.color.set(t.col);modeRingMat.color.set(t.col);
+  const k=1+Math.sin(T*4)*.06;modeBeacon.scale.set(k,1,k);}
+// Minimap: the target as a dot at the edge when it is out of range, plus the compass arrow and objective line.
+function renderModeMini(){const t=GM.tgt;if(!t||!GM.live||MODE==='survival'||state!=='play')return;
+  const DPR=Math.min(2,window.devicePixelRatio||1),Sz=mini.width,sc=Sz/2400,c=Sz/2,maxL=(c-8*DPR)/sc;
+  mctx.setTransform(1,0,0,1,0,0);mctx.translate(c,c);mctx.rotate(-camA-PI/2);mctx.translate(-player.x*sc,-player.y*sc);
+  let vx=t.x-player.x,vy=t.y-player.y;const l=Math.hypot(vx,vy);if(l>maxL){vx*=maxL/l;vy*=maxL/l;}
+  const pulse=1+Math.sin(T*6)*.18;
+  mctx.fillStyle=t.col;mctx.strokeStyle='#000';mctx.lineWidth=2*DPR;mctx.beginPath();mctx.arc((player.x+vx)*sc,(player.y+vy)*sc,6*pulse*DPR,0,TAU);mctx.fill();mctx.stroke();
+  mctx.setTransform(1,0,0,1,0,0);}
+const modeObjEl=$('modeobj');let lastObj='';
+function renderModeHud(){const act=state==='play'&&GM.live&&MODE!=='survival',t=GM.tgt;let txt='',low=false;
+  if(act){const d=t?Math.round(dist(t.x,t.y,player.x,player.y)/8):0;
+    if(MODE==='heist'){
+      txt=(GM.phase===0?(d<MODE_RAD/8?tr('Stanna och ta bytet')+' '+Math.round(GM.hold/1.2*100)+'%':tr('Kör till banken')+' · '+d+' m'):tr('Kör bytet till gömstället')+' · '+d+' m · '+'★'.repeat(wanted))+' · '+fmtScore(GM.pay)+' '+tr('p');}
+    else if(MODE==='trial'){low=GM.left<8;txt=trf('Checkpoint {n}',{n:GM.n+1})+' · '+d+' m · '+fmtTime(Math.max(0,GM.left));}
+    else{low=GM.left<20;txt=trf('Kvadda poliser: {n}',{n:GM.wr})+' · '+fmtTime(Math.max(0,GM.left));}}
+  const key=act?txt+'|'+low:'';if(key!==lastObj){lastObj=key;modeObjEl.hidden=!act;modeObjEl.textContent=txt;modeObjEl.classList.toggle('low',low);}
+  if(act&&t){const rel=angDiff(Math.atan2(t.y-player.y,t.x-player.x),camA);compEl.hidden=false;carrow.setAttribute('transform',`rotate(${rel*180/PI} 17 17)`);carrow.setAttribute('fill',t.col);
+    cdist.textContent=Math.round(dist(t.x,t.y,player.x,player.y)/8)+' m';cdist.style.color=t.col;}}
+
 /* ---------- Loop ---------- */
 function startGame(){if(state!=='start')return;audioInit();hideScreens();resetRun();}
 $('play').addEventListener('click',startGame);
@@ -2539,7 +2652,7 @@ function lerpOut(){const S=lerpSaved;for(let i=S.length-5;i>=0;i-=5){const o=S[i
 let acc=0,last=performance.now();
 function frame(now){const rdt=Math.min(.1,(now-last)/1000);autoQuality(rdt);acc=paused?0:Math.min(DT*4,acc+rdt*(slowT>0?.35:1));if(slowT>0)slowT-=rdt;last=now;
   while(acc>=DT){snapPrev();tick();acc-=DT;for(const k in pressed)delete pressed[k];touch.actP=false;touch.enterP=false;touch.swapP=false;}
-  lerpIn(paused?1:acc/DT);updateCamera(rdt*60);syncScene();lerpOut();syncPowerups();syncCombat();audioUpdate();if(!$('skins').hidden)renderSkinPreview();renderFrame();renderMini();renderHud();requestAnimationFrame(frame);}
+  lerpIn(paused?1:acc/DT);updateCamera(rdt*60);syncScene();lerpOut();syncPowerups();syncCombat();syncMode();audioUpdate();if(!$('skins').hidden)renderSkinPreview();renderFrame();renderMini();renderModeMini();renderHud();renderModeHud();requestAnimationFrame(frame);}
 requestAnimationFrame(frame);
 </script>
 
