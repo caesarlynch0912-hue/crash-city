@@ -76,7 +76,8 @@ const tgs=[0,1,2].map(i=>{const c=G.makeCar(pc.x,pc.y+250+i*120,0,'cop');c.hp=c.
 G.applyPower(P('homing'));ok(G.shots.filter(x=>x.home).length===6,'6 homing missiles launched');
 let homed=false;for(let i=0;i<260;i++){G.tick();if(tgs.some(c=>c.hp<=0))homed=true;}
 ok(homed,'homing missiles wreck cops ('+tgs.map(c=>Math.round(c.hp)).join(',')+')');
-// --- 6. packages
+// --- 6. packages (start from no found packages: earlier drives may pick some up)
+delete store['hh-more'];
 G=load();ok(G.MX_PKGS.length===50,'50 packages placed ('+G.MX_PKGS.length+')');
 ok(G.MX_PKGS.every(p=>fin(p.x)&&fin(p.y)&&G.freeCircle(p.x,p.y,9)),'all packages sit on free ground');
 ok(new Set(G.MX_PKGS.map(p=>Math.round(p.x)+','+Math.round(p.y))).size===50,'package positions unique');
