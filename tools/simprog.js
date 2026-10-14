@@ -5,9 +5,9 @@ const el=()=>({textContent:'',innerHTML:'',hidden:true,style:{setProperty(){}},c
 global.document={getElementById:()=>el(),createElement:()=>el(),documentElement:el(),querySelector:()=>el()};global.matchMedia=()=>({matches:false});global.addEventListener=()=>{};
 const store={};global.localStorage={getItem:k=>store[k]===undefined?null:store[k],setItem:(k,v)=>store[k]=String(v)};
 const load=()=>new Function(s+`function sfx(){} function hideScreens(){} function showBrief(){} var paused=false; var camA=0;
-  return {resetRun,tick,endRun,get prog(){return prog},get wallet(){return wallet},set wallet(v){wallet=v},get score(){return score},set score(v){score=v},progLevel,progBuy,PROG_MUL,PROG_COST,player,keys,get state(){return state},set runCoins(v){runCoins=v}};`)();
+  return {PROP_CFG,resetRun,tick,endRun,get prog(){return prog},get wallet(){return wallet},set wallet(v){wallet=v},get score(){return score},set score(v){score=v},progLevel,progBuy,PROG_MUL,PROG_COST,player,keys,get state(){return state},set runCoins(v){runCoins=v}};`)();
 let fails=0;const ok=(c,m)=>{console.log((c?'ok   ':'FAIL ')+m);if(!c)fails++;};
-const topSpeed=H=>{H.resetRun();H.keys.KeyW=true;let m=0;for(let i=0;i<500;i++){H.tick();if(H.state==='play'&&H.player.car)m=Math.max(m,Math.abs(H.player.car.v));}H.keys.KeyW=false;return m;};
+const topSpeed=H=>{H.PROP_CFG.dens=0;H.resetRun();H.keys.KeyW=true;let m=0;for(let i=0;i<500;i++){H.tick();if(H.state==='play'&&H.player.car)m=Math.max(m,Math.abs(H.player.car.v));}H.keys.KeyW=false;return m;};
 let G=load();ok(G.progLevel().lv===1&&G.prog.xp===0,'fresh save is level 1');
 ok(!G.progBuy('engine'),'cannot buy without coins');
 G.resetRun();ok(G.player.car.maxHp===100,'base armor 100 (no upgrades)');
