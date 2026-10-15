@@ -32,6 +32,7 @@ Repo: `https://github.com/caesarlynch0912-hue/crash-city`. `main` holds the game
 | `tools/sim9.js` | Car-jack phase test + challenge completion test. |
 | `tools/simbp.js` | Battle Pass test (lock/unlock at 10 000, tier rewards, reload persistence, old-record unlock) + Space-drift/Shift-nitro check. Exits 1 on any failure. |
 | `tools/i18ncheck.js` + `tools/dict.js` | Checks every `tr()/trf()` key and visible Swedish text has all 6 translations and placeholders survive. `node tools/i18ncheck.js index.html`. `dict.js` is a copy of the `const DICT=` object embedded in `index.html` (regenerated from 1.6); when you add strings, update both. |
+| `tools/build-crazygames.sh` | `bash tools/build-crazygames.sh` builds `dist/crash-city-crazygames.zip` (index.html + local three.js r128 + Bungee/Chakra Petch woff2 from @fontsource, relative paths, no external URLs) for the CrazyGames developer portal. Pricedown is dropped there because its free licence does not allow embedding in games. `dist/` is git-ignored. |
 | `tools/removed-game-feel-version.html` | The reverted "game feel" version (slip/drift model, combo bank, skid marks, speed lines, medals, settings sliders, 28 unit tests). Kept only in case the user wants pieces back. |
 
 All the `tools/*.js` scripts take the HTML file as their argument and slice the `<script>` block up to the `/* ================= 3D` marker, so they work on `index.html` as-is.
