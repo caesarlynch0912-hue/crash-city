@@ -447,7 +447,7 @@ button.bpt{cursor:pointer}button.bpt:hover,button.bpt:focus{outline:none;border-
       <button id="hStart" class="mitem">Så spelar du</button>
       <button id="setStart" class="mitem">Inställningar</button>
     </nav>
-    <div class="foot"><span id="bestStart">Inget rekord än</span><span id="selStart"></span><span class="ver">Version 1.9</span></div>
+    <div class="foot"><span id="bestStart">Inget rekord än</span><span id="selStart"></span><span class="ver">Version 2.0</span></div>
   </div>
 </section>
 
@@ -684,7 +684,7 @@ const placeName=b=>(PLACES[LANG]||PLACES.sv)[b]||b;
 function tr(s){if(LANG==='sv')return s;const e=DICT[s];return e&&e[LI[LANG]]!=null?e[LI[LANG]]:s;}
 function trf(s,v){let r=tr(s);for(const k in v)r=r.split('{'+k+'}').join(v[k]);return r;}
 const LOCALE=()=>(LANGS.find(x=>x[0]===LANG)||LANGS[1])[2];
-const VERSION='1.9';
+const VERSION='2.0';
 if(typeof THREE==='undefined'){const e=document.createElement('div');e.id='err';e.textContent=tr('3D-motorn kunde inte laddas. Kontrollera internetanslutningen och ladda om sidan.');document.body.appendChild(e);throw new Error('three missing');}
 const PI=Math.PI,TAU=PI*2,DT=1/60;
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
@@ -1924,20 +1924,31 @@ function takeCar(c){
   c.ai=false;c.stun=0;player.car=c;c.driven=true;}
 function enterCar(c){const hasDriver=(c.kind==='civ'&&c.ai&&!c.driven)||(isEnemy(c)&&c.hp>0);
   player.jack={c,t:0,phase:'walk',hasDriver,pulled:false};c.stun=Math.max(c.stun,3);c.v*=.2;player.spd=0;}
-function jackDoor(c){const a=c.a-PI/2,r=c.h/2+8;return{x:c.x+Math.cos(c.a)*4+Math.cos(a)*r,y:c.y+Math.sin(c.a)*4+Math.sin(a)*r};}
+// A point beside the car: `along` towards the nose, `side` out from the driver's (door) side.
+function jackPt(c,along,side){const o=c.a-PI/2;return{x:c.x+Math.cos(c.a)*along+Math.cos(o)*side,y:c.y+Math.sin(c.a)*along+Math.sin(o)*side};}
+// The 3D door hangs from a hinge at 0.17*w and covers 0.17w..-0.13w, so the player waits behind it, clear of the swing.
+function jackDoor(c){return jackPt(c,-c.w*.18,c.h/2+9);}
+// walk to the door > pull (open the door, and throw out the driver if there is one) > enter (step into the gap, sit down, shut the door)
 function updateJack(){const j=player.jack,c=j.c;j.t+=DT;c.v*=.5;if(c.ai||isEnemy(c))c.stun=Math.max(c.stun,.5);
   if(c.hp<=0||!cars.includes(c)){player.jack=null;return;}
-  const d=jackDoor(c);
+  const d=jackDoor(c),face=c.a+PI/2;
   if(j.phase==='walk'){const dx=d.x-player.x,dy=d.y-player.y,l=Math.hypot(dx,dy);
-    player.a=lerpAngle(player.a,l>4?Math.atan2(dy,dx):c.a+PI/2,.3);
-    if(l>2&&j.t<.8){const s=Math.min(l,3.4);player.x+=dx/l*s;player.y+=dy/l*s;player.step+=s;}else{j.phase=j.hasDriver?'pull':'enter';j.t=0;}}
-  else if(j.phase==='pull'){player.a=lerpAngle(player.a,c.a+PI/2,.3);c.doorOpen=Math.min(1,(c.doorOpen||0)+DT*6);
-    if(!j.pulled&&j.t>.14){j.pulled=true;const out=c.a-PI/2,p=newPed(d.x-Math.cos(out)*5,d.y-Math.sin(out)*5);p.a=out+PI;p.stumble=1;p.pushA=out;
+    player.a=lerpAngle(player.a,l>4?Math.atan2(dy,dx):face,.3);
+    if(l>2&&j.t<1.2){const s=Math.min(l,3.4);player.x+=dx/l*s;player.y+=dy/l*s;player.step+=s;}
+    else{player.x=d.x;player.y=d.y;j.phase='pull';j.t=0;}}
+  else if(j.phase==='pull'){player.a=lerpAngle(player.a,face,.3);player.x+=(d.x-player.x)*.3;player.y+=(d.y-player.y)*.3;
+    c.doorOpen=Math.min(1,(c.doorOpen||0)+DT*5);
+    if(j.hasDriver&&!j.pulled&&j.t>.2){j.pulled=true;
+      // The driver comes out of the door gap and is thrown outwards and towards the rear, past the player instead of through them.
+      const g=jackPt(c,c.w*.04,c.h/2+3),pa=c.a-PI/2-.25,p=newPed(g.x,g.y);p.a=pa+PI;p.stumble=1;p.pushA=pa;
       if(c.kind==='cop'){p.shirt='#1a2a5a';p.pants='#141a30';}else if(c.kind==='army'){p.shirt='#4b5a2e';p.pants='#3a4724';}
       sfx('pull',c.x,c.y);shake=Math.max(shake,2);}
-    if(j.t>.66){j.phase='enter';j.t=0;}}
-  else{c.doorOpen=j.t<.16?1:Math.max(0,1-(j.t-.16)*5);player.x+=(c.x-player.x)*.16;player.y+=(c.y-player.y)*.16;player.a=lerpAngle(player.a,c.a,.25);
-    if(j.t>.4){player.jack=null;c.doorOpen=0;takeCar(c);chal('jack',1);sfx('door',c.x,c.y);}}}
+    if(j.t>(j.hasDriver?.6:.24)){j.phase='enter';j.t=0;}}
+  else{// step sideways into the door gap, then slide into the seat; the door shuts once the player is inside
+    const tg=j.t<.14?jackPt(c,c.w*.02,c.h/2+3):jackPt(c,c.w*.02,0);
+    player.x+=(tg.x-player.x)*.3;player.y+=(tg.y-player.y)*.3;player.step+=1.2;player.a=lerpAngle(player.a,c.a,.2);
+    c.doorOpen=j.t<.3?1:Math.max(0,1-(j.t-.3)/.14);
+    if(j.t>.46){player.jack=null;c.doorOpen=0;takeCar(c);chal('jack',1);sfx('door',c.x,c.y);}}}
 
 function endRun(kind){if(state!=='play')return;updateBP();saveBP();achEndRun();progAward();state='dead';deadT=2.4;deadKind=kind;sfx(kind);saveWallet();modeEnd();
   if(player.car)exitCar(false);
@@ -2710,7 +2721,7 @@ function animPed(m,p){const u=m.userData;m.position.set(p.x,groundY(p.x,p.y),p.y
 const CAM_WANT=new THREE.Vector3();
 function updateCamera(fk){fk=fk||1;
   const pc=player.car,tx=player.x,ty=player.y,sp=pc?Math.abs(pc.v):0;
-  const heading=pc?(pc.v<-1?pc.a+PI:pc.a):player.a;
+  const heading=pc?(pc.v<-1?pc.a+PI:pc.a):player.jack&&player.jack.phase!=='walk'?player.jack.c.a:player.a;// stay behind the car while jacking it
   camA=lerpAngle(camA,heading,1-Math.pow(1-(pc?.07:.08),fk));
   const back=state==='start'?150:pc?92+sp*6:62,up=state==='start'?95:pc?40+sp*1.8:32;
   const dx=-Math.cos(camA),dy=-Math.sin(camA);let d=back;

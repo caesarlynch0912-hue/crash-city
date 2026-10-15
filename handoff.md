@@ -1,6 +1,6 @@
 # Handoff: Crash City (formerly "Harbor Heat")
 
-Current version: **1.9** (on `main`) plus a score/Battle Pass rebalance (2026-10-15, version label not bumped). 1.8 and 1.9 were made by another agent and pushed as GitHub user `vilmerfrost`; this file only covers the parts of them that later work touched, so read the code and the `tools/sim*.js` headers for the rest. Everything below is what a new agent needs to continue without re-reading the old conversation.
+Current version: **2.0** (on `main`): 1.9 + the score/Battle Pass rebalance + a reworked car-jack animation (2026-10-15). 1.8 and 1.9 were made by another agent and pushed as GitHub user `vilmerfrost`; this file only covers the parts of them that later work touched, so read the code and the `tools/sim*.js` headers for the rest. Everything below is what a new agent needs to continue without re-reading the old conversation.
 
 Repo: `https://github.com/caesarlynch0912-hue/crash-city`. `main` holds the game (`index.html`) plus these notes and tools. The `claude-handoff` branch is the original 1.4 handoff snapshot (older game copies, Electron stub); it is history now and not needed for new work.
 
@@ -15,6 +15,7 @@ Repo: `https://github.com/caesarlynch0912-hue/crash-city`. `main` holds the game
 - **1.7** (this PC, 2026-10-14): Battle Pass (asked for in Swedish: "Battle pass" with "coola skins som t.ex tung tung sahur och John pork", unlocked at 10k score) and controls swapped back in the car: **Shift = nitro, Space = drift** (on foot unchanged: Space jump, Shift sprint, V punch).
 - **1.8–1.9** (pushed as `vilmerfrost`, 2026-10-14 evening): game modes (Heist, Time Trial, Demolition), player level/XP (`hh-prog`) and coin-bought car upgrades, achievements, daily missions and login streak, reward FX, a 26×26 map (highway ring, river, stunt jump, airport, new districts), 4 new vehicles, 3 power-ups, hidden packages, unique stunt jumps, rampages, destructible street props, day/night, weather, cinematic explosions. New tests: `tools/simach.js, simmap2.js, simmodes.js, simprog.js, simprops.js, simstuff.js`.
 - **Score rebalance** (2026-10-15, user: "make the games score harder. So you cant complte battle pass insta in one run"): a measured immortal bot made 97k–148k points in 8 minutes and finished the whole 48k pass in one run. Changes: wreck score multiplier capped at `COMBO_MAX`=4 (combo counter itself still climbs for challenges) and base 150/400 → 120/300; airtime 400 → 180 points per second; points per second `3+wanted*3+(military?10:0)` (was `6+wanted*5+20`); Battle Pass tiers escalate (see below). Afterwards the same bot reaches 50k–68k in 8 minutes = tier 4–5 of 12.
+- **2.0** (2026-10-15, user: "skapa 2.0 och fixa animationen när man öppnar främlingars bil"): only the car-jack sequence changed, plus the version label. `jackPt(c,along,side)` gives points beside the driver's door. The player waits at `-0.18*w` (behind the open door's swing), the door opens in phase `pull`, the driver spawns in the door gap and stumbles out and towards the rear (`pushA = a-PI/2-.25`, never through the player, min ~8 units), then in `enter` the player steps into the gap, slides to the seat, and the door shuts after him. Cars without a driver also open the door first (short `pull`). While jacking, the camera stays behind the car instead of swinging sideways. The user rejected a bigger 2.0 plan (Battle Pass season 2, new cars), so ask before adding features.
 - They also work on a second Windows 11 PC (user `caesa`), where the repo lives at `C:\Users\caesa\Projects\crash-city`.
 - The user has not asked to publish code anywhere beyond this GitHub repo.
 
@@ -78,7 +79,7 @@ localStorage keys: `hh-lang, hh-best, hh-garage, hh-coins, hh-stats, hh-skin, hh
 - Pricedown could be inlined as a data-URI font to work in the artifact and offline. Check Typodermic's licence and ask the user first.
 - Possible offline build: inline three.js (~600 KB) so no CDN is needed.
 
-- Version label: `const VERSION` and the start-screen footer (now 1.7); bump both together.
+- Version label: `const VERSION` and the start-screen footer (now 2.0); bump both together.
 - On this PC the localhost:5177 save already finished the pass (tier 12) before the rebalance. Ask the user whether to reset it so they can play the harder pass; do not reset without a yes.
 - Battle Pass ideas if asked: a HUD progress chip during runs, a season 2 with new skins, cars as rewards. Gold (metal) skins look dark in the Skins preview because that scene has no environment map; Guldkalven has the same issue.
 - On this PC the localhost:5177 save has best 10 429, so the pass is already open there (tier 0).
