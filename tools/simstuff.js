@@ -4,7 +4,7 @@ const fs=require('fs');const h=fs.readFileSync(process.argv[2],'utf8');
 let s=h.split('<script>')[1].split('</script>')[0];s=s.slice(0,s.indexOf('/* ================= 3D'));s=s.replace("if(typeof THREE==='undefined')","if(false)");
 const el=()=>({textContent:'',innerHTML:'',hidden:true,style:{setProperty(){}},classList:{add(){},remove(){},toggle(){}},appendChild(){},append(){},prepend(){},remove(){},addEventListener(){},setPointerCapture(){},querySelector:()=>el(),getBoundingClientRect:()=>({top:0}),children:[],focus(){}});
 global.document={getElementById:()=>el(),createElement:()=>el(),documentElement:el()};global.matchMedia=()=>({matches:false});global.addEventListener=()=>{};global.setTimeout=()=>0;
-const store={};global.localStorage={getItem:k=>store[k]===undefined?null:store[k],setItem:(k,v)=>store[k]=String(v)};
+const store={'hh-tut':'1'};/* tutorial already seen, so runs start with police */global.localStorage={getItem:k=>store[k]===undefined?null:store[k],setItem:(k,v)=>store[k]=String(v)};
 let seed=5;Math.random=()=>{seed=(Math.imul(seed^(seed>>>15),2246822519)+0x6D2B79F5)>>>0;seed^=seed>>>13;return(seed>>>0)/4294967296;};
 const load=()=>new Function(s+`;function sfx(){} function hideScreens(){} function showBrief(){} var paused=false; var camA=0;
   return {resetRun,tick,CAR_SPECS,POWER,garage,cars,player,fx,shots,peds,parts,applyPower,makeCar,mxMorph,enterCar,takeCar,spawnEnemy,damage,isEnemy,

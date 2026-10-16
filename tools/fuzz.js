@@ -19,11 +19,11 @@ if(isMainThread){
     return {reset:resetRun,tick,get state(){return state},player,cars,peds,parts,shots,coins,powerups,crates,mines,fx,POWER,WEAPONS,CAR_SPECS,garage,
       setWanted(w,m){wanted=w;military=m;runT=m?150:w*25;},get score(){return score},set score(v){score=v},keys,pressed,applyPower,giveWeapon,spawnEnemy,enterCar,exitCar,nearestCar,
       endRun,carHits,solid,roadPoint,unstick,isEnemy,get heli(){return heli},set heliCD(v){heliCD=v},selectW,switchW,get runCoins(){return runCoins},get wallet(){return wallet},
-      get chals(){return chals},showOver,KEYDEF,setLang(l){LANG=l;},blocks,WORLD};`)();
+      get chals(){return chals},TUT,showOver,KEYDEF,setLang(l){LANG=l;},blocks,WORLD};`)();
   const fin=v=>typeof v==='number'&&isFinite(v);
   const fails=[],stats={jacks:0,powers:0,deaths:0,heli:0,coins:0,airborne:0,shotsFired:0};let ticks=0;
   for(let n=0;n<workerData.per;n++){const sd=(workerData.wid*1000003+n*7919+1)>>>0;seed=sd||1;let tick=0;
-    try{G.garage.owned=G.CAR_SPECS.map(c=>c.id);G.garage.sel=G.CAR_SPECS[Math.floor(Math.random()*G.CAR_SPECS.length)].id;G.reset();
+    try{G.TUT.done=Math.random()<.85;/* most runs skip the tutorial, some play it */G.garage.owned=G.CAR_SPECS.map(c=>c.id);G.garage.sel=G.CAR_SPECS[Math.floor(Math.random()*G.CAR_SPECS.length)].id;G.reset();
       const p=G.roadPoint(0,99999)||{x:G.player.x,y:G.player.y};const c0=G.player.car;c0.x=p.x;c0.y=p.y;c0.a=Math.random()*6.28;G.unstick(c0);G.player.x=c0.x;G.player.y=c0.y;
       if(Math.random()<.5)G.setWanted(1+Math.floor(Math.random()*5),Math.random()<.3);if(Math.random()<.3)G.heliCD=0;
       const coins0=G.wallet;
