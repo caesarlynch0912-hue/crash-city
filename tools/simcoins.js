@@ -43,6 +43,11 @@ const n0=new Set(coins.map(c=>c.trail)).size;
 for(let n=0;n<400;n++){if(!coins.length)break;const id=coins[Math.floor(R()*coins.length)].trail;for(let j=coins.length-1;j>=0;j--)if(coins[j].trail===id)coins.splice(j,1);
   player.x=200+R()*(WORLD-400);player.y=200+R()*(WORLD-400);spawnCoinTrail(R()<.7);}
 check('after 400 respawns');
-const n1=new Set(coins.map(c=>c.trail)).size;ok(n1>=n0-2,'trails are replaced, not lost ('+n0+' -> '+n1+')');
+// a long run: the trail count is topped back up once a second
+for(let n=0;n<3000;n++){const id=coins[Math.floor(R()*coins.length)].trail;for(let j=coins.length-1;j>=0;j--)if(coins[j].trail===id)coins.splice(j,1);spawnCoinTrail(true);}
+resetRun();for(let i=0;i<60*60;i++){tick();for(let j=cars.length-1;j>=0;j--)if(isEnemy(cars[j]))cars.splice(j,1);}
+const nL=new Set(coins.map(c=>c.trail)).size;ok(nL>=COIN_TRAILS-1,'after 3000 replacements and a minute of play the trails are back to '+COIN_TRAILS+' ('+nL+')');
+const n1=new Set(coins.map(c=>c.trail)).size;// the trail count drifts a little with the jump/plain mix under COIN_CAP; what matters is that coins do not run out
+ok(n1>=n0-5&&coins.length>=200,'trails are replaced, not lost ('+n0+' -> '+n1+' trails, '+coins.length+' coins)');
 `)(ok);
 process.exit(fails?1:0);

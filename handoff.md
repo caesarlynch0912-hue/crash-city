@@ -1,6 +1,6 @@
 # Handoff: Crash City (formerly "Harbor Heat")
 
-Current version: **2.2** (2026-10-16): 2.1 + coins down the middle of the road and along ramp jumps, an unbroken highway ring, softer police contacts, and varied traffic plus parked cars. 2.0 (CrazyGames submission #1) was rejected for overall quality; 2.1/2.2 are resubmission candidates. 1.8 and 1.9 were made by another agent and pushed as GitHub user `vilmerfrost`; this file only covers the parts of them that later work touched, so read the code and the `tools/sim*.js` headers for the rest. Everything below is what a new agent needs to continue without re-reading the old conversation.
+Current version: **2.3** (2026-10-16): 2.2 + a two-stage helicopter, the Legend X car and Legend skin for every achievement, one colour per power-up (with a list in How to play) and far more repairs. 2.0 (CrazyGames submission #1) was rejected for overall quality; 2.1/2.2 are resubmission candidates. 1.8 and 1.9 were made by another agent and pushed as GitHub user `vilmerfrost`; this file only covers the parts of them that later work touched, so read the code and the `tools/sim*.js` headers for the rest. Everything below is what a new agent needs to continue without re-reading the old conversation.
 
 Repo: `https://github.com/caesarlynch0912-hue/crash-city`. `main` holds the game (`index.html`) plus these notes and tools. The `claude-handoff` branch is the original 1.4 handoff snapshot (older game copies, Electron stub); it is history now and not needed for new work.
 
@@ -29,6 +29,13 @@ Repo: `https://github.com/caesarlynch0912-hue/crash-city`. `main` holds the game
   - Police contact (`collide`): player vs police/army is shoved .7 vs 1.3 and speed is cut once per contact (.85 player, .55 hunter, `bumpT` .4 s) instead of x.7 every overlapping tick; contact damage is also once per contact (x2.2). Measured: a 150 km/h side-swipe used to end at 2 km/h, now 121 km/h, with about the same armour loss (71 vs 66 left).
   - Variety: `CIV_SPECS` adds five street-only models with their own parts in `MXB` (limo, pizza, hotrod, camper, bubble); `civStyle` gives ~62 % of civilians a model from `CIV_POOL` (weighted, rare fast cars, recolours for plain ones). Taking a model shows its name in the feed. Parked cars (`parkSpots`/`parkTick`, ~12 within 1400): on suburban driveways (tail by the house, nose over the sidewalk) and 30 inside countryside block edges; checked with `carHits`; pedestrians step around them (`pedOnParked`). `makeCarPlain` is makeCar without the random styling.
   - New tests: `tools/simcoins.js`, `tools/simstreet.js`. `simstuff.js` now checks `civStyle` (was `mxMorph`, removed).
+- **2.3** (2026-10-16, user: helicopter too strong, weaker early and stronger from ~20k; a maxed car + cool skin for all achievements; a different colour for every power-up, green for repair; repairs much more common; a colour list in How to play):
+  - Helicopter: `HELI[0]` patrol (200 hp, fires only at 5 stars, bursts of 3, pause 3.4 s, 2 dmg, spread .2) below `HELI_STRONG` 20 000 run points; `HELI[1]` attack (360 hp, fires from 4 stars, bursts of 6, pause 2 s, 3.5 dmg, spread .1) at or above it; `heliUpgrade` turns a patrol helicopter in the air into the attack one, and the model shows rocket pods + a red band (`heliG.userData.pods`). Measured damage per 30 s of fire on a parked car: old 180 (5 stars), now 18 patrol / 231 attack.
+  - Reward: `CAR_SPECS` id `legend` (Legend X, `ach:true`, `req:Infinity`, tops speed/acc/grip, 420 armour, `MXB.legend` neon parts) and `SKINS` id `legend` (The Legend: neon tracksuit, glowing visor, `hat:'halo'`; `neon`/`visor` are new skin fields). `achAll()`/`achReward()` grant both once every ACH is unlocked (also at load, after all `ACH.push`). Garage and Skins cards say "Unlock every achievement"; the Achievements screen shows the prize (`#achPrize`).
+  - Power-ups: `POW_COL` (one colour each, repair green `#2bff5a`, nothing else green, smallest CIE76 gap ~22), `powCol(def)` used for the 3D orb/beam (`powMats`, normal blending for the dark oil colour), pickup toast, burst, minimap dot, compass arrow and the HUD timers (`FX_COL`). `REPAIR_SHARE` .3 of spawns are repair (was 1 in 5 early, 1 in 27 late). Repair text: "Fixes the car and gives you health".
+  - How to play: the tier list is replaced by `#powLegend` (`renderPowLegend()`, rebuilt each time the screen opens, so it follows the language), grouped by tier, golden key under "Special".
+  - Coins: `coinKeep()` tops the trails back up to `COIN_TRAILS` 36 once a second (about 0.4 % of replacements failed and a long run slowly lost trails).
+  - New test: `tools/simreward.js` (helicopter levels and damage, colours, repair share, Legend unlock rules).
 - They also work on a second Windows 11 PC (user `caesa`), where the repo lives at `C:\Users\caesa\Projects\crash-city`.
 - The user has not asked to publish code anywhere beyond this GitHub repo.
 
@@ -45,6 +52,7 @@ Repo: `https://github.com/caesarlynch0912-hue/crash-city`. `main` holds the game
 | `tools/sim9.js` | Car-jack phase test + challenge completion test. |
 | `tools/simcoins.js` | Coins on the centre line, off ramps and the highway, jump trails collectable at the design speed, trails replaced not lost. |
 | `tools/simstreet.js` | No city traffic on the highway, highway lanes, traffic/parked variety, parked cars clear of walls and roads, police contact keeps speed. |
+| `tools/simreward.js` | Patrol vs attack helicopter, unique power-up colours, repair share, Legend X / Legend skin only for every achievement. |
 | `tools/simtut.js` | Tutorial test: no police during it, every step completes from real input, saved as seen, Enter skips, replay works. Exits 1 on failure. |
 | `tools/simbp.js` | Battle Pass test (lock/unlock at 10 000, tier rewards, reload persistence, old-record unlock) + Space-drift/Shift-nitro check. Exits 1 on any failure. |
 | `tools/i18ncheck.js` + `tools/dict.js` | Checks every `tr()/trf()` key and visible Swedish text has all 6 translations and placeholders survive. `node tools/i18ncheck.js index.html`. `dict.js` is a copy of the `const DICT=` object embedded in `index.html` (regenerated from 1.6); when you add strings, update both. |
@@ -96,7 +104,7 @@ localStorage keys: `hh-lang, hh-best, hh-garage, hh-coins, hh-stats, hh-skin, hh
 - Pricedown was replaced by **Passion One 900** (OFL, Google Fonts) on 2026-10-15: Pricedown's free licence does not allow embedding in games or websites, and a game licence has no public price. The user chose the free look-alike. Do not bring Pricedown back.
 - Possible offline build: inline three.js (~600 KB) so no CDN is needed.
 
-- Version label: `const VERSION` and the start-screen footer (now 2.2); bump both together.
+- Version label: `const VERSION` and the start-screen footer (now 2.3); bump both together.
 - On this PC the localhost:5177 save already finished the pass (tier 12) before the rebalance. Ask the user whether to reset it so they can play the harder pass; do not reset without a yes.
 - Battle Pass ideas if asked: a HUD progress chip during runs, a season 2 with new skins, cars as rewards. Gold (metal) skins look dark in the Skins preview because that scene has no environment map; Guldkalven has the same issue.
 - On this PC the localhost:5177 save has best 10 429, so the pass is already open there (tier 0).

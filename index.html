@@ -396,6 +396,14 @@ button.bpt{cursor:pointer}button.bpt:hover,button.bpt:focus{outline:none;border-
 #bustwarn b{display:block;font-family:var(--display);text-transform:uppercase;font-size:clamp(22px,4vw,34px);color:#6aa8ff;text-shadow:0 3px 0 #000;letter-spacing:.03em;animation:blink .5s steps(2) infinite}
 #bustwarn .bb{width:220px;height:7px;margin:6px auto 0;background:rgba(0,0,0,.5);border:1px solid rgba(106,168,255,.6)}
 #bustwarn .bb i{display:block;height:100%;width:0;background:#6aa8ff}
+/* === How to play: one row per power-up colour === */
+.pownote{font-size:13px;margin:0 0 8px;color:rgba(242,234,216,.8)}
+.powlegend{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:4px 14px;margin:0 0 16px}
+.pl-h{grid-column:1/-1;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--signal);margin-top:6px}
+.pl{display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.25}
+.pl i{flex:0 0 18px;height:18px;border-radius:50%;margin-top:0;background:var(--c);border:3px solid #17111c;box-shadow:0 0 0 1px rgba(242,234,216,.4)}/* dark ring: reds and pinks still read on the pink menu */
+.pl b{display:block;font-weight:700}
+.pl small{display:block;color:rgba(242,234,216,.65);font-size:12px}
 </style>
 </head>
 <body>
@@ -466,7 +474,7 @@ button.bpt{cursor:pointer}button.bpt:hover,button.bpt:focus{outline:none;border-
       <button id="hStart" class="mitem">Så spelar du</button>
       <button id="setStart" class="mitem">Inställningar</button>
     </nav>
-    <div class="foot"><span id="bestStart">Inget rekord än</span><span id="selStart"></span><span class="ver">Version 2.2</span></div>
+    <div class="foot"><span id="bestStart">Inget rekord än</span><span id="selStart"></span><span class="ver">Version 2.3</span></div>
   </div>
 </section>
 
@@ -479,12 +487,8 @@ button.bpt{cursor:pointer}button.bpt:hover,button.bpt:focus{outline:none;border-
         <h3>Målet</h3>
         <p>Polisen är efter dig från första sekunden. Var 25:e sekund blir de fler, efter 2:20 kommer militären. Poängen tickar snabbare ju hetare jakten är. Kvaddar i rad ger combo.</p>
         <h3>Power-ups</h3>
-        <ul class="tiers">
-          <li><b>Nivå 1</b> Reparation, nitro, dubbla poäng, magnet, superhopp</li>
-          <li><b>Nivå 2 · 600 p</b> Sköld, EMP, monsterbil, lockbete, kulregn</li>
-          <li><b>Nivå 3 · 1 800 p</b> Spöke, chockvåg, flygattack, slow-mo</li>
-          <li><b>Nivå 4 · 4 000 p</b> Tidsfrys, megasmäll, blixtstorm</li>
-        </ul>
+        <p class="pownote">Färgen visar vad du får. Starkare power-ups dyker upp när poängen stiger.</p>
+        <div id="powLegend" class="powlegend"></div>
         <h3>Utmaningar</h3>
         <p>Tre utmaningar visas uppe till vänster. Klara dem för bonuspoäng. Varje klarad utmaning räknas mot nya skins.</p>
       </div>
@@ -579,6 +583,7 @@ button.bpt{cursor:pointer}button.bpt:hover,button.bpt:focus{outline:none;border-
 <section id="ach" class="screen" hidden>
   <div class="wrap">
     <div class="ghead"><div><div class="eyebrow">Permanenta mål</div><h2 class="title sm">Prestationer</h2></div><span id="achCount">0 / 0</span></div>
+    <p class="gsub" id="achPrize"></p>
     <p class="gsub" id="achStreak"></p>
     <div id="achPips" aria-hidden="true"></div>
     <div><h3 class="achh">Dagens uppdrag</h3>
@@ -703,7 +708,7 @@ const placeName=b=>(PLACES[LANG]||PLACES.sv)[b]||b;
 function tr(s){if(LANG==='sv')return s;const e=DICT[s];return e&&e[LI[LANG]]!=null?e[LI[LANG]]:s;}
 function trf(s,v){let r=tr(s);for(const k in v)r=r.split('{'+k+'}').join(v[k]);return r;}
 const LOCALE=()=>(LANGS.find(x=>x[0]===LANG)||LANGS[1])[2];
-const VERSION='2.2';
+const VERSION='2.3';
 if(typeof THREE==='undefined'){const e=document.createElement('div');e.id='err';e.textContent=tr('3D-motorn kunde inte laddas. Kontrollera internetanslutningen och ladda om sidan.');document.body.appendChild(e);throw new Error('three missing');}
 const PI=Math.PI,TAU=PI*2,DT=1/60;
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
@@ -1054,7 +1059,7 @@ let mission=null,camX=player.x,camY=player.y,shake=0,helpHidden=false;
 let score=0,runT=0,best=0,powerT=2,wrecks=0;
 try{best=+localStorage.getItem('hh-best')||0;}catch(e){}
 const POWER=[
-  {id:'repair',name:'Reparation',tier:1,dur:0,desc:'Bilen är som ny'},
+  {id:'repair',name:'Reparation',tier:1,dur:0,desc:'Lagar bilen och ger dig hälsa'},
   {id:'nitro',name:'Nitro',tier:1,dur:6,desc:'Toppfart i 6 sekunder'},
   {id:'x2',name:'Dubbla poäng',tier:1,dur:12,desc:'×2 i 12 sekunder'},
   {id:'magnet',name:'Magnet',tier:1,dur:12,desc:'Drar till dig allt i närheten'},
@@ -1073,6 +1078,13 @@ const POWER=[
   {id:'storm',name:'Blixtstorm',tier:4,dur:6,desc:'Blixtar slår ner i jägarna'},
 ];
 const TIER_AT=[0,0,600,1800,4000],TIER_COL=['#ffffff','#7dffa8','#3de0ff','#b45cff','#ffd23f'];
+// One colour per power-up, so the colour tells you what you are driving into. Green is only ever repair.
+// Picked for meaning first (orange nitro, cyan shield, purple ghost...) and then spread out so no two are close
+// (smallest CIE76 distance between any two is ~22). The How to play list (POW_ORDER) shows them all.
+const POW_COL={repair:'#2bff5a',nitro:'#ff8a1f',x2:'#fff23a',magnet:'#ff2a3a',hop:'#ffffff',shield:'#22e6ff',emp:'#2f5bff',monster:'#9a5a24',decoy:'#ff9ad5',
+  ammo:'#8f99ab',ghost:'#a64dff',shock:'#ff2ad4',slow:'#8c7bff',freeze:'#a8ecff',oil:'#3c3c46',air:'#ebdf8e',nuke:'#b9465d',storm:'#7aa7ff',ram:'#eba18e',homing:'#3300ff',key:'#ffc400'};
+const powCol=def=>POW_COL[def.id]||TIER_COL[def.tier];
+const REPAIR_SHARE=.3;// repair is about a third of all power-ups, whatever the tier (it used to be 1 in 5 early and 1 in 27 later)
 const powerups=[],fx={nitro:0,x2:0,shield:0,ghost:0,freeze:0,magnet:0,monster:0,decoy:0,ammo:0,slow:0,storm:0};
 const FX_NAME={nitro:'Nitro',x2:'Dubbla poäng',shield:'Sköld',ghost:'Spöke',freeze:'Tidsfrys',magnet:'Magnet',monster:'Monsterbil',decoy:'Lockbete',ammo:'Kulregn',slow:'Slow-mo',storm:'Blixtstorm'},
   FX_DUR={nitro:6,x2:12,shield:8,ghost:7,freeze:6,magnet:12,monster:9,decoy:7,ammo:10,slow:7,storm:6},
@@ -1085,10 +1097,10 @@ const fmtTime=t=>{const s=Math.floor(t);return Math.floor(s/60)+':'+String(s%60)
 function spawnPower(){const mt=maxTier(),pool=[];
   for(let t=1;t<=mt;t++){const w=t===mt?3:1;for(const p of POWER)if(p.tier===t)for(let i=0;i<w;i++)pool.push(p);}
   const p=roadPoint(220,900);if(!p)return;
-  const def=R()<.28&&lockedCars().some(c=>c.req<=KEY_MAX_REQ)&&!powerups.some(q=>q.def.id==='key')?KEYDEF:pick(pool);powerups.push({x:p.x,y:p.y,def,t:0});}
+  const def=R()<.28&&lockedCars().some(c=>c.req<=KEY_MAX_REQ)&&!powerups.some(q=>q.def.id==='key')?KEYDEF:R()<REPAIR_SHARE?POWER[0]:pick(pool);powerups.push({x:p.x,y:p.y,def,t:0});}
 function addScore(v){score+=v*(fx.x2>0?2:1);}
 function applyPower(def){
-  chal('power',1);toast(tr(def.name).toUpperCase(),TIER_COL[def.tier],tr(def.desc),1.6);if(def.id!=='key')sfx('pickup',undefined,undefined,def.tier);
+  chal('power',1);toast(tr(def.name).toUpperCase(),powCol(def),tr(def.desc),1.6);if(def.id!=='key')sfx('pickup',undefined,undefined,def.tier);
   const near=r=>cars.filter(c=>isEnemy(c)&&c.hp>0&&dist(c.x,c.y,player.x,player.y)<r);
   switch(def.id){
     case'repair':if(player.car)player.car.hp=player.car.maxHp||100;player.hp=Math.min(100,player.hp+50);break;
@@ -1334,7 +1346,7 @@ function updateWorld(){
     if(player.hp<=0)endRun('wasted');
   }
   for(let i=powerups.length-1;i>=0;i--){const p=powerups[i];p.t+=DT;
-    if(state==='play'&&dist(p.x,p.y,player.x,player.y)<(player.car?38:24)){applyPower(p.def);burst(p.x,p.y,TIER_COL[p.def.tier],30,5,14);powerups.splice(i,1);}
+    if(state==='play'&&dist(p.x,p.y,player.x,player.y)<(player.car?38:24)){applyPower(p.def);burst(p.x,p.y,powCol(p.def),30,5,14);powerups.splice(i,1);}
     else if(p.t>45)powerups.splice(i,1);}
   if(coinChainT>0){coinChainT-=DT;if(coinChainT<=0)coinChain=0;}
   for(let i=coins.length-1;i>=0;i--){const c=coins[i];c.t+=DT;
@@ -1413,7 +1425,7 @@ for(const col of blocks)for(const b of col)if((b.kind==='mountain'||b.kind==='in
 function rampH(x,y){for(const r of RAMPS){const da=r.horiz?x-r.x:y-r.y,dc=r.horiz?y-r.y:x-r.x;if(Math.abs(da)<30&&Math.abs(dc)<50)return 11*(1-Math.abs(da)/30);}return 0;}
 for(let i=RAMPS.length-1;i>=0;i--)if(inHwyBand(RAMPS[i].x,RAMPS[i].y))RAMPS.splice(i,1);// a ramp on the highway is a bump at 140 km/h
 for(let i=0;i<Math.round(70*(N*N)/324);i++){const p=curbPoint();if(!inHwyBand(p.x,p.y))barrels.push({x:p.x,y:p.y,alive:true,fuse:0,t:0});}/* MAP 2: scaled with the area */
-for(let i=0;i<36;i++)spawnCoinTrail(false);/* 36 trails stay under COIN_CAP with the longer jump trails */
+for(let i=0;i<36;i++)spawnCoinTrail(false);/* 36 trails (COIN_TRAILS) stay under COIN_CAP with the longer jump trails */
 
 const curW=()=>WEAPONS[wIdx];
 const ownedW=()=>WEAPONS.filter(w=>arsenal[w.id]>0);
@@ -1480,17 +1492,26 @@ function spawnCrate(){const mt=maxTier(),pool=['smg','smg','shotgun','mine'];if(
   const p=roadPoint(250,900);if(!p)return;crates.push({x:p.x,y:p.y,w:pick(pool),t:0});}
 function giveWeapon(id){const w=WEAPONS.find(q=>q.id===id);arsenal[id]=Math.min((arsenal[id]||0)+w.ammo,w.ammo*2);wIdx=WEAPONS.indexOf(w);
   toast(tr(w.name).toUpperCase(),w.col,(w.mine?trf('+{n} minor · F släpper bakom bilen',{n:w.ammo}):trf('+{n} skott · F eller klick för att skjuta',{n:w.ammo})),1.8);sfx('reload');}
+// Two helicopters: a light patrol one, and from HELI_STRONG points in a run an attack helicopter
+// (it also upgrades a patrol helicopter already in the air). HELI[lvl]: health, the wanted level it opens fire at,
+// shots per burst, pause between bursts, damage per hit, aim spread, and the wait before it comes back once shot down.
+const HELI_STRONG=20000,HELI=[{hp:200,fireAt:5,burst:3,pause:3.4,dmg:2,spread:.2,back:40},{hp:360,fireAt:4,burst:6,pause:2,dmg:3.5,spread:.1,back:30}];
+Object.assign(DICT,{"ATTACKHELIKOPTER":["ATTACK HELICOPTER","KAMPFHUBSCHRAUBER","HÉLICO D'ATTAQUE","HELICÓPTERO DE ATAQUE","KAMPHELIKOPTER","KAMPHELIKOPTER"],
+  "Tyngre beväpnad och tåligare":["Heavier guns, tougher armour","Schwerer bewaffnet und zäher","Mieux armé et plus résistant","Más armado y más resistente","Tungere bevæbnet og mere robust","Tyngre bevæpnet og tøffere"]});
+function heliUpgrade(h){if(h.lvl)return;h.lvl=1;h.hp+=HELI[1].hp-HELI[0].hp;notify(tr('ATTACKHELIKOPTER'),'#ff3d3d',tr('Tyngre beväpnad och tåligare'),2.2);sfx('alert');}
 function updateHeli(){
-  if(!heli){heliCD-=DT;if(state==='play'&&wanted>=4&&heliCD<=0){const p=roadPoint(700,1000)||{x:player.x+800,y:player.y};
-    heli={x:p.x,y:p.y,alt:150,hp:320,a:0,t:0,cd:3,burst:0,falling:false,vz:0};toast(tr('HELIKOPTER'),'#ff6a6a',tr('Polisen har luftstöd'),1.6);sfx('alert');}return;}
+  if(!heli){heliCD-=DT;if(state==='play'&&wanted>=4&&heliCD<=0){const p=roadPoint(700,1000)||{x:player.x+800,y:player.y},strong=score>=HELI_STRONG;
+    heli={x:p.x,y:p.y,alt:150,hp:HELI[strong?1:0].hp,lvl:strong?1:0,a:0,t:0,cd:4,burst:0,falling:false,vz:0};
+    toast(tr(strong?'ATTACKHELIKOPTER':'HELIKOPTER'),strong?'#ff3d3d':'#ff6a6a',tr('Polisen har luftstöd'),1.6);sfx('alert');}return;}
+  if(!heli.lvl&&!heli.falling&&state==='play'&&score>=HELI_STRONG)heliUpgrade(heli);
   const h=heli;h.t+=DT;
   if(h.falling){h.alt+=h.vz;h.vz-=.12;h.a+=.18;h.x+=Math.cos(h.a)*2.5;h.y+=Math.sin(h.a)*2.5;if(R()<.6)parts.push({x:h.x,y:h.y,h:h.alt,vh:.3,vx:0,vy:0,life:1.5,max:1.5,col:'#3a3640',smoke:true});
-    if(h.alt<=CURB+6){explode(h.x,h.y,140,220,'e');heli=null;heliCD=30;}return;}
+    if(h.alt<=CURB+6){explode(h.x,h.y,140,220,'e');heliCD=HELI[h.lvl||0].back;heli=null;}return;}
   if(state!=='play'){h.x+=3;h.alt+=.5;if(h.alt>400)heli=null;return;}
   if(fx.freeze>0)return;
   const ox=player.x+Math.cos(h.t*.4)*170,oy=player.y+Math.sin(h.t*.4)*170,d=dist(h.x,h.y,ox,oy),sp=Math.min(8,d*.05),ang=Math.atan2(oy-h.y,ox-h.x);
   h.x+=Math.cos(ang)*sp;h.y+=Math.sin(ang)*sp;h.a=lerpAngle(h.a,Math.atan2(player.y-h.y,player.x-h.x),.05);h.alt+=(150-h.alt)*.02;
-  if(wanted>=5&&fx.ghost<=0){h.cd-=DT;if(h.cd<=0){h.burst++;h.cd=h.burst%6===0?2.4:.13;enemyShot(h.x,h.y,h.alt-10,.12,3,'bullet');}}}
+  const hc=HELI[h.lvl||0];if(wanted>=hc.fireAt&&fx.ghost<=0){h.cd-=DT;if(h.cd<=0){h.burst++;h.cd=h.burst%hc.burst===0?hc.pause:.13;enemyShot(h.x,h.y,h.alt-10,hc.spread,hc.dmg,'bullet');}}}
 function updateAir(c){if(c.z===undefined){c.z=0;c.vz=0;c.air=false;}
   const gh=rampH(c.x,c.y);
   if(c.air){c.vz-=.2;c.z+=c.vz;
@@ -1595,6 +1616,8 @@ const SKINS=[
   {id:'shark',name:'Tralalero Tralala',bp:7,jacket:'#5b8fc4',shirt:'#eef2f6',pants:'#3a6a9a',shoes:'#f4f4f4',head:'shark',skin:'#5b8fc4'},
   {id:'croc',name:'Bombardiro Crocodilo',bp:9,jacket:'#5a6b3a',shirt:'#8a7a4a',pants:'#4a5a30',shoes:'#2a2418',head:'croc',skin:'#4f8a3a'},
   {id:'gsahur',name:'Guld-Sahur',bp:12,jacket:'#e8c040',shirt:'#e8c040',pants:'#e8c040',shoes:'#c8a030',head:'log',skin:'#e8c040',bat:'#fff3c4',metal:true},
+  // Reward for unlocking every achievement: black tracksuit with neon stripes, a glowing visor and a halo.
+  {id:'legend',name:'Legenden',ach:true,jacket:'#15151d',shirt:'#3de0ff',pants:'#15151d',shoes:'#0c0c10',stripe:'#3de0ff',neon:true,shades:true,visor:'#3de0ff',hat:'halo',hatCol:'#3de0ff',hair:'#0c0c10',skin:'#c99a6e'},
 ];
 let stats={chal:0,seen:['std']};
 try{const s=JSON.parse(localStorage.getItem('hh-stats')||'null');if(s&&typeof s.chal==='number')stats={chal:s.chal,seen:Array.isArray(s.seen)?s.seen:['std']};}catch(e){}
@@ -1684,7 +1707,8 @@ function progRenderGarage(){progUI();const w=document.getElementById('gup');if(!
     b.addEventListener('click',()=>{if(progBuy(u.id)){sfx('key');renderGarage();}else sfx('alert');});
     r.append(n,pips,b);w.appendChild(r);}}
 /* === END PROGRESSION === */
-const skinOK=s=>s.bp?bp.tier>=s.bp:stats.chal>=s.req;
+const achAll=()=>ACH.every(a=>A.u[a.id]);
+const skinOK=s=>s.bp?bp.tier>=s.bp:s.ach?achAll():stats.chal>=s.req;
 const currentSkin=()=>{const s=SKINS.find(k=>k.id===skinId);return s&&skinOK(s)?s:SKINS[0];};
 function checkSkinUnlocks(){for(const s of SKINS)if(skinOK(s)&&!stats.seen.includes(s.id)){stats.seen.push(s.id);saveStats();toast(tr('NYTT SKIN!'),'#ffd23f',trf('{x} finns under Skins',{x:tr(s.name)}),2.2);}}
 let chals=[],chalDone=0;
@@ -1757,7 +1781,12 @@ function achCheck(){let any=false;
   for(const a of ACH){if(A.u[a.id]||a.v()<a.g)continue;
     A.u[a.id]=Date.now();any=true;wallet+=a.rw;saveWallet();
     notify(tr('PRESTATION UPPLÅST'),'#ffd23f',tr(a.name)+'  '+trf('+{c} mynt',{c:a.rw}),2.4);achSfx();}
-  if(any)achSave();}
+  if(any)achSave();achReward();}
+// Every achievement unlocked: the Legend X car joins the garage and the Legend skin opens (skinOK checks achAll).
+function achReward(){if(!achAll()||owns('legend'))return;garage.owned.push('legend');saveGarage();
+  if(typeof updateSelLine==='function')updateSelLine();checkSkinUnlocks();
+  toast(tr('ALLA PRESTATIONER!'),'#3de0ff',tr('Legend X och Legenden är dina'),3.2);achSfx();
+  if(typeof fxReward==='function')fxReward('banner',0,'★ Legend X ★');}
 
 /* --- daily missions (3 per day, seeded by the date; one reroll per day) --- */
 const DM_POOL=[
@@ -1846,6 +1875,17 @@ CAR_SPECS.push(
   {id:'monstert',name:'Mammut Monstertruck',color:'#e8a020',shape:'monster',w:58,h:36,speed:6.6,acc:1.1,grip:.85,armor:320,req:16000,tone:.5,mx:'monster',crush:1,mxd:'Krossar småbilar den landar på'},
   {id:'stridsv',name:'Kolossen Stridsvagn',color:'#4c5a33',shape:'tank2',w:66,h:34,speed:5.6,acc:.8,grip:.7,armor:1100,req:150000,tone:.45,mx:'tank',cannon:1,mxd:'Kanon på F · enormt pansar'});
 {const g=CAR_SPECS.find(s=>s.id==='glass');if(g){g.jingle=true;g.mxd='Spelar glasskioskens melodi';}}// the ice-cream van plays its jingle
+// The reward for unlocking every achievement (ach): the best car in the game, top of every stat bar. It cannot be bought,
+// won with the golden key or unlocked by score (req is Infinity); achCheck() hands it over together with the Legend skin.
+CAR_SPECS.push({id:'legend',name:'Legend X',color:'#0d0e14',shape:'sport',w:50,h:23,speed:9.8,acc:2.2,grip:1.65,armor:420,req:Infinity,ach:true,
+  glow:'#3de0ff',tone:1.5,mx:'legend',mxd:'Belöning för alla prestationer · bäst i allt'});
+Object.assign(DICT,{"Belöning för alla prestationer · bäst i allt":["Reward for every achievement · best at everything","Belohnung für alle Erfolge · in allem top","Récompense de tous les succès · le meilleur partout","Premio por todos los logros · lo mejor en todo","Belønning for alle præstationer · bedst til alt","Belønning for alle prestasjoner · best på alt"],
+  "Klara alla prestationer":["Unlock every achievement","Alle Erfolge freischalten","Débloque tous les succès","Desbloquea todos los logros","Lås alle præstationer op","Lås opp alle prestasjoner"],
+  "Legenden":["The Legend","Die Legende","La Légende","La Leyenda","Legenden","Legenden"],
+  "ALLA PRESTATIONER!":["EVERY ACHIEVEMENT!","ALLE ERFOLGE!","TOUS LES SUCCÈS !","¡TODOS LOS LOGROS!","ALLE PRÆSTATIONER!","ALLE PRESTASJONER!"],
+  "Legend X och Legenden är dina":["Legend X and The Legend are yours","Legend X und Die Legende gehören dir","Legend X et La Légende sont à toi","Legend X y La Leyenda son tuyos","Legend X og Legenden er dine","Legend X og Legenden er dine"],
+  "Lås upp alla {n} och vinn bilen Legend X och skinet Legenden":["Unlock all {n} to win the Legend X car and The Legend skin","Schalte alle {n} frei und gewinne das Auto Legend X und den Skin Die Legende","Débloque les {n} pour gagner la voiture Legend X et le skin La Légende","Desbloquea los {n} y gana el coche Legend X y el skin La Leyenda","Lås alle {n} op og vind bilen Legend X og skinnet Legenden","Lås opp alle {n} og vinn bilen Legend X og skinnet Legenden"],
+  "Upplåst: bilen Legend X och skinet Legenden":["Unlocked: the Legend X car and The Legend skin","Freigeschaltet: das Auto Legend X und der Skin Die Legende","Débloqués : la voiture Legend X et le skin La Légende","Desbloqueados: el coche Legend X y el skin La Leyenda","Låst op: bilen Legend X og skinnet Legenden","Låst opp: bilen Legend X og skinnet Legenden"]});
 /* ---- street variety: civilians drive real models, and parked cars wait along the way ----
    About 6 in 10 civilian cars use a model (most garage cars plus five street-only ones, CIV_SPECS) instead of the plain sedan/van,
    so a wrecked car can be swapped for something different. Jacked ones get the garage upgrades (PROG_MUL) too.
@@ -1899,7 +1939,11 @@ function parkTick(){if(state!=='play'||(++parkClock%20))return;const S=parkSpots
     if(s.y0!==undefined)c.y=s.y0+c.w/2;// driveway: tail against the house end
     if(carHits(c,c.x,c.y,c.a))continue;// a tree or wall in the way
     c.ai=false;c.parked=true;c.v=0;cars.push(c);n++;break;}}
-{const _uw=updateWorld;updateWorld=function(){_uw();parkTick();};}
+// Coin trails are topped back up to COIN_TRAILS once a second. A replacement can fail (no free road near the player, or the
+// coin cap), and over a long run those misses used to add up to fewer and fewer coins.
+const COIN_TRAILS=36;let coinClock=0;
+function coinKeep(){if(state!=='play'||(++coinClock%60))return;const n=new Set(coins.map(c=>c.trail)).size;if(n<COIN_TRAILS)spawnCoinTrail(true);}
+{const _uw=updateWorld;updateWorld=function(){_uw();parkTick();coinKeep();};}
 // Parked cars stand on sidewalks and driveways, so walkers turn away from them rather than walking through.
 // (updatePed only blocks a step that would enter a car, so a walker spawned inside one can still walk out.)
 let parkedNow=[],parkedAt=-1;
@@ -1916,6 +1960,7 @@ Object.assign(fx,{oil:0,ram:0,homing:0,rampage:0});
 Object.assign(FX_NAME,{oil:'Oljeutsläpp',ram:'Chockram',homing:'Målsökande missiler'});
 Object.assign(FX_DUR,{oil:8,ram:9,homing:1,rampage:30});
 Object.assign(FX_COL,{oil:'#9bd05a',ram:'#7dffa8',homing:'#ff6a3d',rampage:'#ff3d6e'});
+for(const k in FX_COL)if(POW_COL[k])FX_COL[k]=POW_COL[k];// active timers in the HUD use the pickup's colour
 const MXRG={on:false,n:0,goal:10,dur:30};// rampage state
 Object.defineProperty(FX_NAME,'rampage',{enumerable:true,get:()=>tr('Rampage')+' '+MXRG.n+'/'+MXRG.goal});
 const mxOils=[],mxRings=[],mxPicks=[];let mxOilCD=0,mxRamCD=0,mxTankCD=0,mxRgCD=25,mxPingT=0,mxPkgNear=1e9,mxJmp=null;
@@ -2050,6 +2095,8 @@ ACH.push(
   {id:'jumpall',cat:4,name:'Stuntlegenden',d:'Klara {n} unika stunthopp',g:Math.max(4,MX_STUNTS.length),rw:500,v:()=>MX.jumps.length},
   {id:'ramp1',cat:1,name:'Rampagemästaren',d:'Klara {n} rampager',g:1,rw:200,v:()=>MX.rg},
   {id:'ramp5',cat:1,name:'Rampagekungen',d:'Klara {n} rampager',g:5,rw:500,v:()=>MX.rg});
+// After every ACH.push above: a save that already has every achievement gets the Legend X quietly.
+if(achAll()&&!owns('legend')){garage.owned.push('legend');saveGarage();}
 /* === /MORE STUFF (logic) === */
 
 /* ---------- Car-jacking ---------- */
@@ -2320,6 +2367,9 @@ function updateProps(){
         if(Math.abs(f)<c.w/2+d.r&&Math.abs(l)<c.h/2+d.r)propHit(p,c,sp,dx,dy);}}}
   if(pbodies.length||pjets.length)propStep();}
 
+Object.assign(DICT,{"Färgen visar vad du får. Starkare power-ups dyker upp när poängen stiger.":["The colour tells you what you get. Stronger power-ups show up as your score rises.","Die Farbe zeigt, was du bekommst. Stärkere Power-ups erscheinen, wenn deine Punkte steigen.","La couleur indique ce que tu obtiens. Des bonus plus puissants apparaissent quand ton score monte.","El color indica lo que obtienes. Aparecen potenciadores más fuertes según sube tu puntuación.","Farven viser, hvad du får. Stærkere power-ups dukker op, når pointene stiger.","Fargen viser hva du får. Sterkere power-ups dukker opp når poengene stiger."],
+  "Lagar bilen och ger dig hälsa":["Fixes the car and gives you health","Repariert das Auto und gibt dir Gesundheit","Répare la voiture et te rend de la santé","Repara el coche y te da salud","Reparerer bilen og giver dig liv","Reparerer bilen og gir deg helse"],
+  "Övrigt":["Special","Spezial","Spécial","Especial","Særligt","Spesielt"]});
 // How long the police must pin a stopped player before it is BUSTED. The first 25 s of a run are kinder,
 // and the HUD shows a warning meter while bustT fills (bustRender), so a bust never comes out of nowhere.
 function bustLimit(){return runT<25?2.6:2;}
@@ -2811,29 +2861,31 @@ function buildHero(sk){
   const M=c=>mat(c,sk.metal),jacket=M(sk.jacket),shirt=sk.head&&sk.metal?M(sk.shirt):mat(sk.shirt||'#1c1c22'),pants=M(sk.pants),shoe=M(sk.shoes||'#141418'),skin=mat(sk.skin||'#e8b48a'),hair=mat(sk.hair||'#141414'),hat=M(sk.hatCol||'#141414');
   const legs=[];
   for(const z of[-1.7,1.7]){const hip=pivotAt(0,11,z,inner);part(pants,3,5.6,3.2,0,-2.8,0,hip);
-    if(sk.stripe)part(mat(sk.stripe),3.1,5.6,.5,0,-2.8,z>0?1.5:-1.5,hip);
+    if(sk.stripe)part(sk.neon?basic(sk.stripe):mat(sk.stripe),3.1,5.6,.5,0,-2.8,z>0?1.5:-1.5,hip);
     const knee=pivotAt(0,-5.6,0,hip);part(pants,2.9,4.6,3.1,0,-2.3,0,knee);part(shoe,4,1.2,3.3,.6,-4.9,0,knee);legs.push({hip,knee});}
   const torso=pivotAt(0,11,0,inner);
   part(jacket,4.2,8.6,6.8,0,4.3,0,torso);part(shirt,.3,6.6,2.4,2.2,4.4,0,torso);
   if(sk.tie)part(mat(sk.tie),.4,4.4,1,2.4,4.2,0,torso);
-  if(sk.stripe)for(const zz of[-3.45,3.45])part(mat(sk.stripe),4.3,.6,.3,0,7,zz,torso);
+  if(sk.stripe)for(const zz of[-3.45,3.45])part(sk.neon?basic(sk.stripe):mat(sk.stripe),4.3,.6,.3,0,7,zz,torso);
+  if(sk.neon)for(const y of[2.2,5.8])part(basic(sk.stripe),4.3,.45,6.9,0,y,0,torso);// glowing bands round the jacket
   if(sk.reflective)for(const y of[2.6,5.4])part(basic('#eef4f4'),4.3,.8,6.9,0,y,0,torso);
   if(sk.tutu){part(mat(sk.tutu),7.4,1.2,9.2,0,.6,0,torso);part(mat(sk.tutu),6.2,.9,8,0,1.5,0,torso);}
   const head=pivotAt(0,11.6,0,torso);
   if(sk.head)buildSpecialHead(sk,head,M);
   else{part(skin,5.2,5.2,5.2,0,0,0,head);
   for(const zz of[-1.15,1.15])part(EYE_MAT,.3,.9,.9,2.62,.35,zz,head);
-  if(sk.shades)part(basic('#0c0c10'),.4,1.1,4.6,2.66,.4,0,head);
+  if(sk.shades)part(basic(sk.visor||'#0c0c10'),.4,1.1,4.6,2.66,.4,0,head);
   if(sk.hat==='cap'){part(hat,5.5,1.8,5.5,-.05,2.6,0,head);part(hat,2.6,.5,4.6,3.6,1.9,0,head);}
   else if(sk.hat==='helmet'){part(hat,6,2.6,6,0,2.4,0,head);part(hat,6.6,.5,6.6,0,1.3,0,head);}
   else if(sk.hat==='mohawk'){part(hair,5.4,.8,5.4,-.1,2.85,0,head);part(hat,5.4,2.6,1.2,-.2,4.5,0,head);}
   else if(sk.hat==='chef'){part(hat,5.6,1,5.6,0,3,0,head);part(hat,4.8,4.6,4.8,0,5.6,0,head);}
   else if(sk.hat==='bubble'){part(new THREE.MeshStandardMaterial({color:'#bfe8ff',transparent:true,opacity:.3,metalness:.9,roughness:.05}),7.4,7.4,7.4,0,.3,0,head);part(hat,5.8,1.4,5.8,0,-3.2,0,head);}
+  else if(sk.hat==='halo'){part(hair,5.4,.8,5.4,-.1,2.85,0,head);const ring=new THREE.Mesh(new THREE.TorusGeometry(3.1,.42,6,22).rotateX(PI/2),basic(sk.hatCol));ring.position.set(0,5.6,0);head.add(ring);}
   else if(sk.hat==='crown'){part(hair,5.4,.8,5.4,-.1,2.85,0,head);part(hat,5.6,1.4,5.6,0,3.8,0,head);for(const[a,b]of[[2.2,2.2],[-2.2,2.2],[2.2,-2.2],[-2.2,-2.2]])part(hat,1,1.4,1,a,5.1,b,head);}
   else{part(hair,5.5,1.6,5.5,-.1,2.7,0,head);part(hair,1.4,3.6,5.5,-2.1,.9,0,head);}}
   const arms=[];
   for(const z of[-4.6,4.6]){const sh=pivotAt(0,7.9,z,torso);part(jacket,2.4,4.4,2.4,0,-1.9,0,sh);
-    if(sk.stripe)part(mat(sk.stripe),2.5,.5,2.5,0,-3.6,0,sh);
+    if(sk.stripe)part(sk.neon?basic(sk.stripe):mat(sk.stripe),2.5,.5,2.5,0,-3.6,0,sh);
     const el=pivotAt(0,-4,0,sh);part(jacket,2.3,3.6,2.3,0,-1.7,0,el);part(sk.head&&sk.metal?M(sk.skin):skin,2.2,1.8,2.2,0,-4.2,0,el);
     // Sahur's bat sits in the right hand, tilted forward so it clears the ground, and swings with the arm.
     if(sk.bat&&z>0){const bt=M(sk.bat),grip=pivotAt(.3,-4.4,0,el);grip.rotation.z=.85;part(bt,1.1,3.4,1.1,0,-1.7,0,grip);part(bt,1.9,6,1.9,0,-6.3,0,grip);}
@@ -3168,15 +3220,19 @@ function map2Cull(){
 
 /* ---------- Power-up & shield visuals ---------- */
 const powMeshes=new Map(),powGeo=new THREE.OctahedronGeometry(7,0),powBeamGeo=new THREE.CylinderGeometry(8,8,200,16,1,true),powRingGeo=new THREE.RingGeometry(14,18,32).rotateX(-PI/2);
-const tierMats=TIER_COL.map(c=>new THREE.MeshBasicMaterial({color:c})),
-  tierBeams=TIER_COL.map(c=>new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.22,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,fog:false}));
+// One orb + beam material per colour (cached). A dark colour (oil) adds almost nothing with additive blending, so its beam
+// is drawn as a normal see-through column instead.
+const powMatC=new Map();
+function powMats(def){const c=powCol(def);let m=powMatC.get(c);if(m)return m;const col=new THREE.Color(c),dark=col.r*.3+col.g*.59+col.b*.11<.3;
+  m={orb:new THREE.MeshBasicMaterial({color:c}),beam:new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:dark?.5:.22,blending:dark?THREE.NormalBlending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,fog:false})};
+  powMatC.set(c,m);return m;}
 const aura=new THREE.Mesh(new THREE.SphereGeometry(38,20,14),new THREE.MeshBasicMaterial({color:'#3de0ff',transparent:true,opacity:.14,blending:THREE.AdditiveBlending,depthWrite:false}));aura.visible=false;scene.add(aura);
 const freezeTint=new THREE.Color('#9fd8ff'),slowTint=new THREE.Color('#8a3dff');
 function syncPowerups(){const s=new Set();
   for(const p of powerups){s.add(p);let m=powMeshes.get(p);
-    if(!m){m=new THREE.Group();const o=new THREE.Mesh(powGeo,tierMats[p.def.tier]);o.position.y=16;m.add(o);
-      const b=new THREE.Mesh(powBeamGeo,tierBeams[p.def.tier]);b.position.y=100;m.add(b);
-      const r=new THREE.Mesh(powRingGeo,tierBeams[p.def.tier]);r.position.y=.6;m.add(r);scene.add(m);powMeshes.set(p,m);}
+    if(!m){m=new THREE.Group();const pm=powMats(p.def);const o=new THREE.Mesh(powGeo,pm.orb);o.position.y=16;m.add(o);
+      const b=new THREE.Mesh(powBeamGeo,pm.beam);b.position.y=100;m.add(b);
+      const r=new THREE.Mesh(powRingGeo,pm.beam);r.position.y=.6;m.add(r);scene.add(m);powMeshes.set(p,m);}
     m.position.set(p.x,0,p.y);const o=m.children[0];o.rotation.y=p.t*2.4;o.rotation.x=p.t*.8;o.position.y=16+Math.sin(p.t*3)*2.5;
     m.visible=!(p.t>40&&Math.floor(p.t*6)%2);}
   for(const[p,m]of powMeshes)if(!s.has(p)){scene.remove(m);powMeshes.delete(p);}
@@ -3341,7 +3397,11 @@ const heliG=new THREE.Group();{const dark=new THREE.MeshStandardMaterial({color:
   heliG.userData.rotor=new THREE.Group();const rb=new THREE.MeshBasicMaterial({color:'#0e0f14',transparent:true,opacity:.75});
   for(const a of[0,PI/2]){const b=new THREE.Mesh(BOX,rb);b.scale.set(110,.6,4);b.rotation.y=a;heliG.userData.rotor.add(b);}heliG.userData.rotor.position.y=9;heliG.add(heliG.userData.rotor);
   heliG.userData.tail=new THREE.Mesh(BOX,rb);heliG.userData.tail.scale.set(16,.4,2);heliG.userData.tail.position.set(-52,7,1.6);heliG.add(heliG.userData.tail);
-  heliG.userData.red=add(redOn,2,2,2,-8,-6,9);heliG.userData.blue=add(blueOn,2,2,2,-8,-6,-9);}
+  heliG.userData.red=add(redOn,2,2,2,-8,-6,9);heliG.userData.blue=add(blueOn,2,2,2,-8,-6,-9);
+  // attack helicopter (HELI_STRONG): stub wings with rocket pods and a red nose band, hidden on the patrol helicopter
+  {const pod=new THREE.MeshStandardMaterial({color:'#2a2c32',metalness:.6,roughness:.4}),band=basic('#d81e2a'),pods=[];
+    for(const z of[-1,1]){pods.push(add(dark,6,1,8,2,-3,z*12));pods.push(add(pod,14,3.2,3.2,3,-5.2,z*16));pods.push(add(band,1,3.4,3.4,10.4,-5.2,z*16));}
+    pods.push(add(band,1.6,14.4,16.4,-6,0,0));heliG.userData.pods=pods;}}// band round the white cabin, behind the cockpit
 heliG.visible=false;scene.add(heliG);
 const searchCone=new THREE.Mesh(new THREE.CylinderGeometry(2,1,1,24,1,true).translate(0,.5,0),new THREE.MeshBasicMaterial({color:'#cfe6ff',transparent:true,opacity:.07,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));
 searchCone.visible=false;scene.add(searchCone);
@@ -3377,7 +3437,7 @@ function syncCombat(){
   decoyG.visible=!!decoy;if(decoy){decoyG.position.set(decoy.x,groundY(decoy.x,decoy.y),decoy.y);decoyG.rotation.y=-decoy.a;decoyG.children[0].material.opacity=.35+Math.sin(T*14)*.15;}
   for(let i=0;i<boltMeshes.length;i++){const b=bolts[i],m=boltMeshes[i];m.visible=!!b;if(b){m.position.set(b.x+(R()-.5)*6,200,b.y+(R()-.5)*6);m.material.color.set(b.col);m.material.opacity=b.t*4;}}
   for(let i=0;i<markMeshes.length;i++){const s=strikes[i],m=markMeshes[i];m.visible=!!s;if(s){m.position.set(s.x,.8,s.y);const k=1+Math.sin(T*16)*.15;m.scale.set(k*60,1,k*60);}}
-  heliG.visible=!!heli;searchCone.visible=searchPool.visible=!!heli&&!heli.falling;searchSpot.intensity=heli&&!heli.falling?2.2:0;
+  heliG.visible=!!heli;{const at=!!(heli&&heli.lvl);for(const o of heliG.userData.pods)o.visible=at;}searchCone.visible=searchPool.visible=!!heli&&!heli.falling;searchSpot.intensity=heli&&!heli.falling?2.2:0;
   if(heli){const h=heli;heliG.position.set(h.x,h.alt,h.y);heliG.rotation.set(h.falling?Math.sin(T*9)*.3:0,-h.a,h.falling?.3:-.12);
     heliG.userData.rotor.rotation.y=T*28;heliG.userData.tail.rotation.z=T*40;const f=Math.floor(T*5)%2;heliG.userData.red.visible=!!f;heliG.userData.blue.visible=!f;
     if(!h.falling){const gx=player.x+Math.sin(T*1.3)*14,gz=player.y+Math.cos(T*1.1)*14,gy=groundY(player.x,player.y)+.6;
@@ -3633,6 +3693,10 @@ MXB.camper=(g,c)=>{const L=c.w,Wd=c.h,P=civPart(g,c),h=L/2;
 MXB.bubble=(g,c)=>{const L=c.w,Wd=c.h,P=civPart(g,c);
   P(CIVM.white,L*.4+.5,1.4,Wd-4.2,-L*.09,18.7,0);// white roof cap: two-tone
   for(const z of[-1,1])P(MXM.head,.8,2.6,2.6,L/2+.2,8.6,z*(Wd/2-3.4));};// big round-eye headlights
+MXB.legend=(g,c)=>{const L=c.w,Wd=c.h,P=civPart(g,c),neon=basic('#3de0ff');
+  P(MXM.dark,7,1,Wd+3,-L/2+3,15.4,0);for(const z of[-1,1])P(MXM.dark,3,4.6,.8,-L/2+3.4,12.8,z*(Wd/2-1));P(neon,7.2,.3,Wd+3.2,-L/2+3,16,0);// rear wing with a lit edge
+  for(const z of[-1,1])P(neon,L*.86,.5,.3,0,5.2,z*(Wd/2+.15));// neon strips low down both sides
+  P(neon,.5,.9,Wd-6,L/2+.3,7.4,0);P(MXM.dark,L*.22,.6,Wd-8,L*.22,10.2,0);};// light bar in the nose, bonnet scoop
 {const _bc=buildCar;buildCar=function(c){const g=_bc(c),t=c.spec&&c.spec.mx;if(t&&MXB[t])MXB[t](g,c);return g;};}
 
 /* per-frame animation of the new models + squashed cars (monster truck) */
@@ -3747,7 +3811,7 @@ function renderMini(){const DPR=Math.min(2,window.devicePixelRatio||1),Sz=Math.r
   const maxL=(c-8*DPR)/sc;
   const edgeDot=(x,y,r,col)=>{let vx=x-player.x,vy=y-player.y;const l=Math.hypot(vx,vy);if(l>maxL){vx*=maxL/l;vy*=maxL/l;}
     mctx.fillStyle=col;mctx.strokeStyle='#000';mctx.lineWidth=1.5*DPR;mctx.beginPath();mctx.arc((player.x+vx)*sc,(player.y+vy)*sc,r*DPR,0,TAU);mctx.fill();mctx.stroke();};
-  for(const p of powerups)edgeDot(p.x,p.y,4,TIER_COL[p.def.tier]);
+  for(const p of powerups)edgeDot(p.x,p.y,4,powCol(p.def));
   for(const c of crates){const w=WEAPONS.find(q=>q.id===c.w);edgeDot(c.x,c.y,3.4,w.col);}
   if(heli&&!heli.falling)edgeDot(heli.x,heli.y,5,Math.floor(T*5)%2?'#ff3d6e':'#ffffff');
   for(const car of cars){if(car.hp<=0||car===player.car)continue;
@@ -3783,8 +3847,8 @@ function renderHud(){
     lastTier=mt;tierChip.textContent=trf('Nivå {n}',{n:mt});tierChip.style.setProperty('--tc',TIER_COL[mt]);}
   let tg=null,bd=1e9;for(const p of powerups){const d=dist(p.x,p.y,player.x,player.y);if(d<bd){bd=d;tg=p;}}
   compEl.hidden=!tg||state!=='play';
-  if(tg){const rel=angDiff(Math.atan2(tg.y-player.y,tg.x-player.x),camA);carrow.setAttribute('transform',`rotate(${rel*180/PI} 17 17)`);carrow.setAttribute('fill',TIER_COL[tg.def.tier]);
-    cdist.textContent=Math.round(bd/8)+' m';cdist.style.color=TIER_COL[tg.def.tier];}
+  if(tg){const rel=angDiff(Math.atan2(tg.y-player.y,tg.x-player.x),camA);carrow.setAttribute('transform',`rotate(${rel*180/PI} 17 17)`);carrow.setAttribute('fill',powCol(tg.def));
+    cdist.textContent=Math.round(bd/8)+' m';cdist.style.color=powCol(tg.def);}
   hintEl.hidden=!(state==='play'&&!player.car&&!player.jack&&nearestCar());
   const chk=chals.map(c=>c.done+'|'+chalText(c)+'|'+chalProg(c)).join('#');
   if(chk!==lastChal){lastChal=chk;chalEl.innerHTML='';const t=document.createElement('div');t.className='ct';t.textContent=tr('Utmaningar');chalEl.appendChild(t);
@@ -3947,10 +4011,10 @@ function renderGarage(){$('gwc').textContent=fmtScore(wallet);const wrap=$('gcar
     const st=document.createElement('div');st.className='st';
     for(const[k,lab]of[['speed',tr('Toppfart')],['acc',tr('Acceleration')],['grip',tr('Väggrepp')],['armor',tr('Pansar')]]){
       const l=document.createElement('span');l.textContent=lab;const bar=document.createElement('i');const fill=document.createElement('b');
-      fill.style.width=Math.round(s[k]/STAT_MAX[k]*100)+'%';fill.style.setProperty('--c',s.glow||'#ffd23f');bar.appendChild(fill);st.append(l,bar);}
+      fill.style.width=Math.min(100,Math.round(s[k]/STAT_MAX[k]*100))+'%';fill.style.setProperty('--c',s.glow||'#ffd23f');bar.appendChild(fill);st.append(l,bar);}
     b.appendChild(st);
     const tg=document.createElement('div');tg.className='tagl';
-    const price=carPrice(s);tg.textContent=sel?tr('Vald'):own?tr('Välj'):(wallet>=price?trf('Köp för {c} mynt',{c:fmtScore(price)}):trf('Lås upp: {p} p eller {c} mynt',{p:fmtScore(s.req),c:fmtScore(price)}));if(!own&&wallet>=price)tg.style.color='#ffd23f';tg.style.color=sel?'#ffd23f':own?'#7dffa8':'rgba(242,234,216,.65)';b.appendChild(tg);
+    const price=carPrice(s);tg.textContent=sel?tr('Vald'):own?tr('Välj'):s.ach?tr('Klara alla prestationer'):(wallet>=price?trf('Köp för {c} mynt',{c:fmtScore(price)}):trf('Lås upp: {p} p eller {c} mynt',{p:fmtScore(s.req),c:fmtScore(price)}));tg.style.color=sel?'#ffd23f':own?'#7dffa8':s.ach?'#3de0ff':'rgba(242,234,216,.65)';b.appendChild(tg);
     b.addEventListener('click',()=>{if(!own){const price=carPrice(s);if(wallet>=price){wallet-=price;saveWallet();garage.owned.push(s.id);garage.sel=s.id;saveGarage();sfx('key');renderGarage();updateSelLine();const e2=$('car-'+s.id);if(e2)e2.focus();}else sfx('alert');return;}garage.sel=s.id;saveGarage();sfx('click');renderGarage();updateSelLine();$('car-'+s.id).focus();});
     wrap.appendChild(b);}progRenderGarage();}
 function updateSelLine(){const s=selectedSpec();for(const id of['selStart','selOver']){const e=$(id);e.innerHTML='';e.append(tr('Din bil: '));const bb=document.createElement('b');bb.textContent=tr(s.name);e.append(bb,'  ·  '+garage.owned.length+'/'+CAR_SPECS.length+' '+tr('i garaget'));}}
@@ -3973,7 +4037,14 @@ function quitToMenu(){if(state==='play'){updateBP();progAward();}saveBP();paused
   modeEnd();state='start';updateStartFoot();updateSelLine();screenBack=[];showScreen('start',false);}
 $('bpStart').addEventListener('click',()=>showScreen('bpass',true));$('bpBack').addEventListener('click',backScreen);
 $('gStart').addEventListener('click',openGarage);$('skStart').addEventListener('click',()=>{previewSkinId=skinId;showScreen('skins',true);});$('skBack').addEventListener('click',backScreen);$('gOver').addEventListener('click',openGarage);$('gback').addEventListener('click',closeGarage);
-$('hStart').addEventListener('click',()=>showScreen('howto',true));$('hBack').addEventListener('click',backScreen);
+$('hStart').addEventListener('click',()=>{renderPowLegend();showScreen('howto',true);});
+// The power-up colour list in How to play, grouped by the score tier that unlocks them; the golden key last.
+function renderPowLegend(){const L=$('powLegend');L.innerHTML='';
+  const head=t=>{const h=document.createElement('div');h.className='pl-h';h.textContent=t;L.appendChild(h);};
+  const row=d=>{const r=document.createElement('div');r.className='pl';const i=document.createElement('i');i.style.setProperty('--c',powCol(d));
+    const tx=document.createElement('span'),b=document.createElement('b'),sm=document.createElement('small');b.textContent=tr(d.name);sm.textContent=tr(d.desc);tx.append(b,sm);r.append(i,tx);L.appendChild(r);};
+  ['Nivå 1','Nivå 2 · 600 p','Nivå 3 · 1 800 p','Nivå 4 · 4 000 p'].forEach((h,k)=>{head(tr(h));for(const d of POWER)if(d.tier===k+1)row(d);});
+  head(tr('Övrigt'));row(KEYDEF);}$('hBack').addEventListener('click',backScreen);
 $('setStart').addEventListener('click',()=>showScreen('settings',true));$('pSettings').addEventListener('click',()=>showScreen('settings',true));$('sBack').addEventListener('click',backScreen);
 $('pResume').addEventListener('click',resumeGame);$('pQuit').addEventListener('click',quitToMenu);$('pauseBtn').addEventListener('click',pauseGame);
 $('oMenu').addEventListener('click',()=>{if(performance.now()-overAt>600)quitToMenu();});
@@ -4029,6 +4100,7 @@ function achBar(r){const b=document.createElement('div');b.className='achbar';co
 function achNum(v,g,dec,tm){return tm?fmtTime(Math.min(v,g))+' / '+fmtTime(g):(dec?Math.min(v,g).toFixed(1)+' / '+g:fmtScore(Math.min(v,g))+' / '+fmtScore(g));}
 function renderAch(){dailyCheck();
   const got=ACH.filter(a=>A.u[a.id]).length;$('achCount').textContent=trf('{a} / {b} upplåsta',{a:got,b:ACH.length});
+  {const pz=$('achPrize');pz.textContent=got>=ACH.length?tr('Upplåst: bilen Legend X och skinet Legenden'):trf('Lås upp alla {n} och vinn bilen Legend X och skinet Legenden',{n:ACH.length});pz.style.color='#3de0ff';}
   const st=DL.st;$('achStreak').textContent=trf('Inloggningsserie: {n} dagar',{n:st.n})+'  ·  '+trf('Imorgon: +{c} mynt',{c:STREAK_RW[st.n%7]});
   const pips=$('achPips');pips.innerHTML='';
   for(let i=0;i<7;i++){const p=document.createElement('span');const on=st.n>0&&i<((st.n-1)%7)+1;p.className='achpip'+(on?' on':'');p.textContent=STREAK_RW[i];pips.appendChild(p);}
@@ -4059,7 +4131,7 @@ function renderSkins(){const L=$('skinList');L.innerHTML='';$('skinCount').textC
   for(const s of SKINS){const ok=skinOK(s),sel=skinId===s.id;const b=document.createElement('button');b.type='button';b.className='skin'+(sel?' sel':'')+(ok?'':' locked');b.id='skin-'+s.id;
     b.setAttribute('aria-pressed',String(sel));const sw=document.createElement('i');sw.style.background=s.jacket;b.appendChild(sw);
     const nm=document.createElement('span');nm.className='snm';nm.textContent=tr(s.name);b.appendChild(nm);
-    const st=document.createElement('span');st.className='sst';st.textContent=sel?tr('Vald'):ok?tr('Välj'):s.bp?trf('Battle Pass nivå {n}',{n:s.bp}):trf('Klara {n} utmaningar',{n:s.req});if(s.bp&&!ok)st.style.color='#ffd23f';b.appendChild(st);
+    const st=document.createElement('span');st.className='sst';st.textContent=sel?tr('Vald'):ok?tr('Välj'):s.bp?trf('Battle Pass nivå {n}',{n:s.bp}):s.ach?tr('Klara alla prestationer'):trf('Klara {n} utmaningar',{n:s.req});if(s.bp&&!ok)st.style.color='#ffd23f';if(s.ach&&!ok)st.style.color='#3de0ff';b.appendChild(st);
     b.addEventListener('mouseenter',()=>{previewSkinId=s.id;});b.addEventListener('focus',()=>{previewSkinId=s.id;});
     b.addEventListener('click',()=>{if(!ok){sfx('alert');return;}setSkin(s.id);sfx('click');renderSkins();$('skin-'+s.id).focus();});L.appendChild(b);}
   if(!previewSkinId)previewSkinId=skinId;}
