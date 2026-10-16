@@ -7,7 +7,7 @@ global.document={getElementById:()=>el(),createElement:()=>el(),documentElement:
 const store={'hh-tut':'1'};/* tutorial already seen, so runs start with police */global.localStorage={getItem:k=>store[k]===undefined?null:store[k],setItem:(k,v)=>store[k]=String(v)};
 let seed=5;Math.random=()=>{seed=(Math.imul(seed^(seed>>>15),2246822519)+0x6D2B79F5)>>>0;seed^=seed>>>13;return(seed>>>0)/4294967296;};
 const load=()=>new Function(s+`;function sfx(){} function hideScreens(){} function showBrief(){} var paused=false; var camA=0;
-  return {resetRun,tick,CAR_SPECS,POWER,garage,cars,player,fx,shots,peds,parts,applyPower,makeCar,mxMorph,enterCar,takeCar,spawnEnemy,damage,isEnemy,
+  return {resetRun,tick,CAR_SPECS,POWER,garage,cars,player,fx,shots,peds,parts,applyPower,makeCar,civStyle,enterCar,takeCar,spawnEnemy,damage,isEnemy,
     MX,MX_PKGS,MX_STUNTS,MXRG,mxPicks,mxOils,mxRings,RAMPS,freeCircle,prog,progCalc,PROG_MUL,progApplyCar,ACH,A,
     get state(){return state},get score(){return score},set score(v){score=v},get wallet(){return wallet},set wanted(v){wanted=v},get wanted(){return wanted},keys,get slowT(){return slowT},
     get MXCAM(){return MXCAM},get T(){return T},FX_NAME,tr,DT};`)();
@@ -35,11 +35,11 @@ ok(!G.garage.owned.includes('stridsv'),'tank not unlocked at 16 500');
 for(const k in store)delete store[k];Object.assign(store,snap);
 // --- 2. civilians in the new vehicles can be car-jacked and keep their spec + upgrades
 G=load();G.prog.up.armor=2;G.progCalc();G.resetRun();
-let cv=G.makeCar(G.player.x+200,G.player.y,0,'civ');G.cars.push(cv);cv.spec=undefined;G.mxMorph(cv);
-ok(!!cv.spec&&cv.mxCiv,'civ morphs into a special vehicle ('+(cv.spec&&cv.spec.id)+')');
+let cv=G.makeCar(G.player.x+200,G.player.y,0,'civ');G.cars.push(cv);cv.spec=undefined;G.civStyle(cv);
+ok(!!cv.spec&&cv.mxCiv,'civ gets a street model ('+(cv.spec&&cv.spec.id)+')');
 let morphed=0;for(let i=0;i<400;i++){const c=G.makeCar(0,0,0,'civ');if(c.mxCiv)morphed++;}
-ok(morphed>5&&morphed<80,'~7% of new civilians are special ('+morphed+'/400)');
-G.resetRun();cv=G.makeCar(G.player.x+25,G.player.y+25,0,'civ');G.cars.push(cv);G.mxMorph(cv);cv.hp=cv.maxHp*.5;
+ok(morphed>200&&morphed<300,'~62% of new civilians drive a model ('+morphed+'/400)');
+G.resetRun();cv=G.makeCar(G.player.x+25,G.player.y+25,0,'civ');G.cars.push(cv);G.civStyle(cv);cv.hp=cv.maxHp*.5;
 G.player.car.driven=false;G.player.car=null;G.enterCar(cv);for(let i=0;i<300&&G.player.jack;i++)G.tick();
 ok(G.player.car===cv&&cv.spec,'special civ car jacked');ok(Math.abs(cv.maxHp-Math.round(cv.spec.armor*G.PROG_MUL.armor))<1,'jacked car got armor upgrade ('+cv.maxHp+')');ok(cv.hp>0&&cv.hp<cv.maxHp,'jacked car keeps its damage ratio');
 // --- 3. monster truck crush

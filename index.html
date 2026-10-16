@@ -466,7 +466,7 @@ button.bpt{cursor:pointer}button.bpt:hover,button.bpt:focus{outline:none;border-
       <button id="hStart" class="mitem">Så spelar du</button>
       <button id="setStart" class="mitem">Inställningar</button>
     </nav>
-    <div class="foot"><span id="bestStart">Inget rekord än</span><span id="selStart"></span><span class="ver">Version 2.1</span></div>
+    <div class="foot"><span id="bestStart">Inget rekord än</span><span id="selStart"></span><span class="ver">Version 2.2</span></div>
   </div>
 </section>
 
@@ -703,7 +703,7 @@ const placeName=b=>(PLACES[LANG]||PLACES.sv)[b]||b;
 function tr(s){if(LANG==='sv')return s;const e=DICT[s];return e&&e[LI[LANG]]!=null?e[LI[LANG]]:s;}
 function trf(s,v){let r=tr(s);for(const k in v)r=r.split('{'+k+'}').join(v[k]);return r;}
 const LOCALE=()=>(LANGS.find(x=>x[0]===LANG)||LANGS[1])[2];
-const VERSION='2.1';
+const VERSION='2.2';
 if(typeof THREE==='undefined'){const e=document.createElement('div');e.id='err';e.textContent=tr('3D-motorn kunde inte laddas. Kontrollera internetanslutningen och ladda om sidan.');document.body.appendChild(e);throw new Error('three missing');}
 const PI=Math.PI,TAU=PI*2,DT=1/60;
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
@@ -739,6 +739,10 @@ const BR_LINES=[RV,Math.round(N*.5),Math.round(N*.7)],JUMP_LINE=Math.round(N*.38
 const BR_SET=new Set([RING0,RING0+1,RING1,RING1+1,...BR_LINES]);
 const BR_IV=[[RING0*CELL,(RING0+1)*CELL+ROAD],[RING1*CELL,(RING1+1)*CELL+ROAD],...BR_LINES.map(r=>[r*CELL,r*CELL+ROAD])];
 const HW0=RING0*CELL+ROAD+BS/2,HW1=RING1*CELL+ROAD+BS/2;
+// The highway ring's carriageway: the ring blocks plus the cross-street gaps between them. It is drawn as one unbroken
+// highway, city traffic does not cross it, and ramps, barrels and coin trails are kept off it.
+function inHwyBand(x,y){const bx=Math.floor(x/CELL),by=Math.floor(y/CELL),lo=RING0*CELL+ROAD,hi=(RING1+1)*CELL;
+  return((by===RING0||by===RING1)&&y-by*CELL>=ROAD&&x>=lo&&x<hi)||((bx===RING0||bx===RING1)&&x-bx*CELL>=ROAD&&y>=lo&&y<hi);}
 function riverHit(x,y){if(x<=RX0||x>=RX1)return false;
   for(const iv of BR_IV)if(y>=iv[0]&&y<=iv[1])return false;
   if(y>=JY0&&y<=JY0+ROAD)return x>RX0+JP&&x<RX1-JP;
@@ -873,24 +877,32 @@ function curbFar(minD,maxD,fx,fy){let p;for(let i=0;i<300;i++){p=curbPoint();con
 /* === MAP 2: logic (river bridges, highway traffic, spawn filters, cop routing) === */
 {const cp0=curbPoint;curbPoint=function(){let p;for(let t=0;t<8;t++){p=cp0();const b=blockAt(p.x,p.y);if(b&&b.kind!=='highway'&&b.kind!=='river'&&!solid(p.x,p.y))return p;}return p;};}
 {const rp0=roadPoint;roadPoint=function(a,b){for(let t=0;t<8;t++){const p=rp0(a,b);if(!p)return p;if(!solid(p.x,p.y))return p;}return null;};}
-const civOpen=(col,row,d)=>d===0?!(col===RV&&!BR_SET.has(row)):d===2?!(col-1===RV&&!BR_SET.has(row)):true;
-const badCiv=c=>solid(c.x,c.y)||(c.dir%2===0&&c.x>RV*CELL&&c.x<(RV+1)*CELL&&!BR_SET.has(Math.round((c.y-60)/CELL)));
+// Node (col,row) of the street grid, heading d (0 E, 1 S, 2 W, 3 N). Closed: the river without a bridge, and the highway ring,
+// which city traffic no longer crosses (the cross streets inside the ring are lines RING0+1..RING1).
+const ringRow=k=>k===RING0||k===RING1,ringGap=k=>k>RING0&&k<=RING1;
+const civOpen=(col,row,d)=>{if(d===0&&col===RV&&!BR_SET.has(row))return false;if(d===2&&col-1===RV&&!BR_SET.has(row))return false;
+  if((d===1&&ringRow(row)||d===3&&ringRow(row-1))&&ringGap(col))return false;
+  if((d===0&&ringRow(col)||d===2&&ringRow(col-1))&&ringGap(row))return false;return true;};
+const badCiv=c=>solid(c.x,c.y)||(!c.hwy&&inHwyBand(c.x,c.y))||(c.dir%2===0&&c.x>RV*CELL&&c.x<(RV+1)*CELL&&!BR_SET.has(Math.round((c.y-60)/CELL)));
 // Fast traffic on the highway ring: two directions, two lanes each, a bit quicker than city traffic.
-function spawnHwy(far){for(let t=0;t<12;t++){const edge=ri(4),cw=R()<.5,dir=cw?edge:(edge+2)%4,off=R()<.5?45:105,al=HW0+130+R()*(HW1-HW0-260),e=edge===0||edge===3?HW0:HW1;
+function spawnHwy(far){for(let t=0;t<12;t++){const edge=ri(4),cw=R()<.5,dir=cw?edge:(edge+2)%4,off=R()<.5?30:90,al=HW0+130+R()*(HW1-HW0-260),e=edge===0||edge===3?HW0:HW1;
     let x,y;if(edge===0||edge===2){x=al;y=dir===0?e+off:e-off;}else{y=al;x=dir===1?e-off:e+off;}
     if(far){const d=dist(x,y,player.x,player.y);if(d<700||d>2600)continue;}
     if(cars.some(o=>Math.abs(o.x-x)<70&&Math.abs(o.y-y)<70))continue;
     const car=makeCar(x,y,dir*PI/2,'civ');car.dir=dir;car.laneC=dir%2===0?y:x;car.hwy=1;car.cw=cw;car.hoff=off;car.cruise=4+R()*1.8;car.v=car.cruise;cars.push(car);return car;}return null;}
-function hwyNav(c){const d=c.dir,off=c.hoff||45;let nd=-1,e=0;
+function hwyNav(c){const d=c.dir,off=c.hoff||30;let nd=-1,e=0;
   if(d===0&&c.x>=HW1){nd=c.cw?1:3;e=HW1;}else if(d===1&&c.y>=HW1){nd=c.cw?2:0;e=HW1;}
   else if(d===2&&c.x<=HW0){nd=c.cw?3:1;e=HW0;}else if(d===3&&c.y<=HW0){nd=c.cw?0:2;e=HW0;}
   if(nd<0)return;c.dir=nd;c.laneC=(nd===1||nd===2)?e-off:e+off;c.turning=.8;}
-// A civilian that finds water ahead (e.g. spawned in front of a closed river crossing) turns around.
-function civGuard(c){if(c.hwy)return;const dx=[1,0,-1,0][c.dir],dy=[0,1,0,-1][c.dir];if(!solid(c.x+dx*58,c.y+dy*58))return;
+// A civilian that finds water ahead (e.g. spawned in front of a closed river crossing) turns around. Same for the highway:
+// civOpen keeps city traffic off it at intersections, but a car that spawned just past an intersection, or slid through one
+// while stunned, would otherwise drive straight across.
+function civGuard(c){if(c.hwy)return;const dx=[1,0,-1,0][c.dir],dy=[0,1,0,-1][c.dir],ax=c.x+dx*58,ay=c.y+dy*58;
+  if(!solid(ax,ay)&&!(inHwyBand(ax,ay)&&!inHwyBand(c.x,c.y)))return;
   const nd=(c.dir+2)%4,cen=(c.dir===0||c.dir===3)?c.laneC-LANE:c.laneC+LANE;c.dir=nd;c.laneC=laneFor(nd,cen);c.turning=.6;c.lastI='';}
 {const sc0=spawnCiv;spawnCiv=function(far){if(R()<.2){const h=spawnHwy(far);if(h)return h;}
   for(let t=0;t<4;t++){const c=sc0(far);if(!c)return c;if(!badCiv(c))return c;const i=cars.indexOf(c);if(i>=0)cars.splice(i,1);}return null;};}
-{const st0=spawnCoinTrail;spawnCoinTrail=function(near){const n0=coins.length;st0(near);for(let i=coins.length-1;i>=n0;i--)if(solid(coins[i].x,coins[i].y))coins.splice(i,1);};}
+{const st0=spawnCoinTrail;spawnCoinTrail=function(near){const n0=coins.length;st0(near);for(let i=coins.length-1;i>=n0;i--)if(solid(coins[i].x,coins[i].y)&&!(coins[i].h>=3&&riverHit(coins[i].x,coins[i].y)))coins.splice(i,1);};}
 // Hunters on the wrong side of the river drive to the nearest bridge first.
 const BR_YC=[HW0,HW1,...BR_LINES.map(r=>r*CELL+60)];
 const onBridge=y=>BR_IV.some(v=>y>=v[0]&&y<=v[1]);
@@ -954,14 +966,51 @@ function newPed(x,y){const p={x,y,a:R()*TAU,alive:true,hp:2,flee:0,step:R()*10,d
 function placePed(p){const c=curbPoint();p.x=c.x;p.y=c.y;p.alive=true;p.hp=2;p.flee=0;p.deadT=0;}
 for(let i=0;i<48;i++)spawnCiv(false);
 for(let i=0;i<95;i++){const c=curbPoint();newPed(c.x,c.y);}
-// Coins come in short trails along the roads, so collecting them rewards a clean driving line.
+// Coins come in short trails down the middle of the road, so collecting them rewards a clean driving line.
+// An ordinary trail never runs over a ramp at ground level. Instead about a third of the trails are jump trails:
+// a few coins on the approach to a ramp, then up through the air along the arc a car flies at COIN_JUMP_V.
+// coin.h is the coin's height above the ground; a coin in the air is only picked up by a car at about that height.
 let wallet=0;try{wallet=Math.max(0,Math.floor(+localStorage.getItem('hh-coins')||0));if(!isFinite(wallet))wallet=0;}catch(e){wallet=0;}
 let runCoins=0,coinChain=0,coinChainT=0;
 function saveWallet(){try{localStorage.setItem('hh-coins',String(wallet));}catch(e){}}
-function spawnCoinTrail(near){for(let t=0;t<40;t++){const horiz=R()<.5,k=ri(N+1),c=k*CELL+60+(R()<.5?LANE:-LANE),seg=ri(N),s0=seg*CELL+ROAD+20+R()*(BS-180);
-    const x0=horiz?s0:c,y0=horiz?c:s0;if(near){const d=dist(x0,y0,player.x,player.y);if(d<250||d>1500)continue;}
-    const id=R(),len=5+ri(4);for(let i=0;i<len;i++)coins.push({x:horiz?x0+i*30:x0,y:horiz?y0:y0+i*30,t:R()*6,trail:id});return;}}
-for(let i=0;i<40;i++)spawnCoinTrail(false);/* MAP 2: a few more trails for the bigger map (coin instances cap at 320) */
+const COIN_GAP=30,COIN_JUMP_V=6.4,COIN_CAP=290,COIN_REACH=16;// 6.4 is about 140 km/h
+// Mirrors updateAir(): the ramp profile 11*(1-|d|/30), launch at vz 1.4+v*.34 once the climb passes 5, gravity .2 per tick.
+// The ~0.17 % per tick speed loss in the air was measured in the game. Returns the car height per tick by distance d from the ramp top.
+function buildCoinArc(v){const h=d=>Math.abs(d)<30?11*(1-Math.abs(d)/30):0,pts=[{d:-60,z:0}];let d=-60,z=0,vz=0,air=false;
+  for(let i=0;i<200;i++){d+=v;const gh=h(d);
+    if(air){vz-=.2;z+=vz;v*=.9983;if(z<=gh){pts.push({d,z:gh});break;}}
+    else{const climb=gh-z;z=gh;if(climb>.5&&gh>5){air=true;vz=1.4+v*.34;}}
+    pts.push({d,z});}
+  return pts;}
+const COIN_ARC=buildCoinArc(COIN_JUMP_V),COIN_LAND=COIN_ARC[COIN_ARC.length-1].d;
+function arcZ(d){const a=COIN_ARC;if(d<=a[0].d||d>=COIN_LAND)return 0;for(let i=1;i<a.length;i++)if(a[i].d>=d){const p=a[i-1],q=a[i];return p.z+(q.z-p.z)*(d-p.d)/(q.d-p.d);}return 0;}
+// Near a ramp's footprint (rampH is non-zero within 30 along and 50 across), with some extra room.
+function nearRamp(x,y,pad){for(const r of RAMPS){const da=r.horiz?x-r.x:y-r.y,dc=r.horiz?y-r.y:x-r.x;if(Math.abs(da)<30+pad&&Math.abs(dc)<50+pad)return true;}return false;}
+function pushTrail(pts,extra){const id=R();for(const p of pts)coins.push(Object.assign({x:p.x,y:p.y,h:p.h||0,t:R()*6,trail:id},extra));}
+function spawnJumpTrail(near){
+  for(let t=0;t<24;t++){const r=RAMPS[ri(RAMPS.length)];if(!r||!isRoad(r.x,r.y)||inHwyBand(r.x,r.y)||coins.some(o=>o.ramp===r))continue;
+    if(near){const d=dist(r.x,r.y,player.x,player.y);if(d<300||d>1500)continue;}
+    const s=R()<.5?1:-1,pts=[];let ok=true;
+    for(let d=-90;d<=COIN_LAND+COIN_GAP;d+=COIN_GAP){const x=r.horiz?r.x+s*d:r.x,y=r.horiz?r.y:r.y+s*d,h=arcZ(d);
+      // airborne coins may hang over the river jump; coins at ground height need open road under them
+      if(h<3?(solid(x,y)||!isRoad(x,y)):(solid(x,y)&&!riverHit(x,y))){ok=false;break;}
+      if(h<3&&d>30&&nearRamp(x,y,10)){ok=false;break;}// another ramp under the landing
+      pts.push({x,y,h});}
+    if(!ok||coins.length+pts.length>COIN_CAP)continue;
+    pushTrail(pts,{ramp:r});return true;}
+  return false;}
+// near: a replacement trail 250-1500 from the player. Roads are picked around the player's own grid cell (a random pick
+// over the whole map lands that close only ~4 % of the time, so trails used to go missing), and if that fails it goes anywhere.
+function spawnCoinTrail(near){if(R()<.3&&spawnJumpTrail(near))return;
+  const pc=Math.round((player.x-60)/CELL),pr=Math.round((player.y-60)/CELL);
+  for(let t=0;t<60;t++){const far=!near||t>=40,horiz=R()<.5;
+    const k=far?ri(N+1):clamp((horiz?pr:pc)+ri(7)-3,0,N),seg=far?ri(N):clamp(Math.floor((horiz?player.x:player.y)/CELL)+ri(7)-3,0,N-1);
+    const c=k*CELL+60,s0=seg*CELL+ROAD+20+R()*(BS-180),x0=horiz?s0:c,y0=horiz?c:s0;
+    if(!far){const d=dist(x0,y0,player.x,player.y);if(d<250||d>1500)continue;}
+    const len=5+ri(4),pts=[];for(let i=0;i<len;i++)pts.push({x:horiz?x0+i*COIN_GAP:x0,y:horiz?y0:y0+i*COIN_GAP});
+    if(coins.length+len>COIN_CAP||pts.some(p=>nearRamp(p.x,p.y,24)||inHwyBand(p.x,p.y)))continue;
+    pushTrail(pts);return;}}
+// The starting trails are laid after the ramps exist (see RAMPS below).
 
 /* ---------- Input ---------- */
 const keys={},pressed={};
@@ -1220,16 +1269,24 @@ function collide(){
     const dx=b.x-a.x,dy=b.y-a.y;if(Math.abs(dx)>70||Math.abs(dy)>70)continue;const d=Math.hypot(dx,dy),min=(a.w+b.w)/4+8;
     if(d<min&&d>0){const push=(min-d)/2,nx=dx/d,ny=dy/d,pa=a===player.car,pb=b===player.car,civHit=(pa&&!isEnemy(b))||(pb&&!isEnemy(a));
       // Ploughing through civilian traffic keeps the player's momentum and shoves the other car aside; cops still hit hard.
-      const wa=civHit?(pa?.25:1.75):1,wb=2-wa;a.x-=nx*push*wa;a.y-=ny*push*wa;b.x+=nx*push*wb;b.y+=ny*push*wb;
+      // Against police and army the player is shoved less (.7) than the hunter (1.3), so a touch does not stop the car dead.
+      const ph=(pa&&isEnemy(b))||(pb&&isEnemy(a)),wa=civHit?(pa?.25:1.75):ph?(pa?.7:1.3):1,wb=2-wa;a.x-=nx*push*wa;a.y-=ny*push*wa;b.x+=nx*push*wb;b.y+=ny*push*wb;
       const imp=Math.abs(a.v-b.v);
       if(fx.monster>0&&(a===player.car||b===player.car)){const o=a===player.car?b:a;if(o.hp>0){damage(o,999);o.v=0;burst(o.x,o.y,'#3de0ff',16,4,12);shake=Math.max(shake,6);sfx('crash',o.x,o.y,1);}a.v*=a===player.car?.97:.3;b.v*=b===player.car?.97:.3;continue;}
-      if(imp>2){const mult=o=>o.kind==='army'?3:1;damage(a,imp*2.2*mult(b)*(a.kind==='army'?.4:1));damage(b,imp*2.2*mult(a)*(b.kind==='army'?.4:1));
+      // A player-hunter contact deals its damage once (x2.2, about what the old per-tick damage added up to in a short hit),
+      // then nothing more until the .4 s bump cooldown runs out, so pushing on through a police car no longer grinds the car to scrap.
+      const hn=ph?(pa?b:a):null,fresh=!hn||!(hn.bumpT>T),dk=ph?2.2:1;
+      if(imp>2&&fresh){const mult=o=>o.kind==='army'?3:1;damage(a,imp*2.2*dk*mult(b)*(a.kind==='army'?.4:1));damage(b,imp*2.2*dk*mult(a)*(b.kind==='army'?.4:1));
         burst((a.x+b.x)/2,(a.y+b.y)/2,'#ffd27a',10,3);if(typeof vfxSparks==='function'){vfxSparks((a.x+b.x)/2,(a.y+b.y)/2,null,4+imp*1.5);if(imp>6)vfxGlass((a.x+b.x)/2,(a.y+b.y)/2,Math.min(14,imp*1.5));}
         if(a===player.car||b===player.car){shake=Math.max(shake,imp*.8);sfx('crash',a.x,a.y,imp/10);const o=a===player.car?b:a;if(o.kind==='civ'&&o.ai)o.stun=2;}}
       // The crash damage above can wreck the player's car and clear player.car, so use the colliding car itself.
       if(civHit){const o=pa?b:a,pc=pa?a:b,side=Math.sign(Math.cos(pc.a)*(o.y-pc.y)-Math.sin(pc.a)*(o.x-pc.x))||1;
         o.x-=Math.sin(pc.a)*side*7;o.y+=Math.cos(pc.a)*side*7;o.a+=side*.12;o.v*=.4;if(o.ai)o.stun=Math.max(o.stun,1.5);
-        if(!(o.bumpT>T)){pc.v*=.93;o.bumpT=T+.6;}}else{a.v*=.7;b.v*=.7;}}}}
+        if(!(o.bumpT>T)){pc.v*=.93;o.bumpT=T+.6;}}
+      // Player vs hunter: speed is cut once per contact (.85 for the player, .55 for the hunter), not by .7 on every tick
+      // the two overlap, which used to take ~80 % of the player's speed in a few ticks.
+      else if(ph){const pc=pa?a:b;if(fresh){pc.v*=.85;hn.v*=.55;hn.bumpT=T+.4;}}
+      else{a.v*=.7;b.v*=.7;}}}}
   for(const c of cars)if(!c.ai||c.stun>0)unstick(c);
   for(const c of cars){const sp=Math.abs(c.v);if(sp<1.4||(c.z||0)>8)continue;
     for(const p of peds){if(!p.alive)continue;if(Math.abs(p.x-c.x)<24&&Math.abs(p.y-c.y)<24&&dist(p.x,p.y,c.x,c.y)<22){knockPed(p);burst(p.x,p.y,'#ffffff',6,2,12);}}
@@ -1245,7 +1302,7 @@ function updatePed(p){
   if(fleeing){p.flee-=DT;const tgt=player.car||player;p.a=lerpAngle(p.a,Math.atan2(p.y-tgt.y,p.x-tgt.x),.15);}
   else if(R()<.01)p.a+=(R()-.5)*2;
   const nx=p.x+Math.cos(p.a)*sp,ny=p.y+Math.sin(p.a)*sp;
-  if(!solid(nx,ny)&&(fleeing||!isRoad(nx,ny))&&nx>8&&ny>8&&nx<WORLD-8&&ny<WORLD-8){p.x=nx;p.y=ny;p.step+=sp;}else p.a+=PI*(.5+R());
+  if(!solid(nx,ny)&&(fleeing||!isRoad(nx,ny))&&nx>8&&ny>8&&nx<WORLD-8&&ny<WORLD-8&&!(pedOnParked(nx,ny)&&!pedOnParked(p.x,p.y))){p.x=nx;p.y=ny;p.step+=sp;}else p.a+=PI*(.5+R());
 }
 function updateWorld(){
   if(state==='play'){
@@ -1281,7 +1338,8 @@ function updateWorld(){
     else if(p.t>45)powerups.splice(i,1);}
   if(coinChainT>0){coinChainT-=DT;if(coinChainT<=0)coinChain=0;}
   for(let i=coins.length-1;i>=0;i--){const c=coins[i];c.t+=DT;
-    if(state==='play'&&dist(c.x,c.y,player.x,player.y)<(player.car?30:18)){coins.splice(i,1);wallet++;runCoins++;addScore(25);coinChain++;coinChainT=.7;chal('coin',1);
+    const atH=fx.magnet>0||Math.abs((player.car?(player.car.z||0):(player.z||0))-(c.h||0))<COIN_REACH;
+    if(state==='play'&&atH&&dist(c.x,c.y,player.x,player.y)<(player.car?30:18)){coins.splice(i,1);wallet++;runCoins++;addScore(25);coinChain++;coinChainT=.7;chal('coin',1);
       burst(c.x,c.y,'#ffd23f',6,2,10);sfx('coin',undefined,undefined,Math.min(coinChain,8));if(!coins.some(o=>o.trail===c.trail))spawnCoinTrail(true);}
     else if(dist(c.x,c.y,player.x,player.y)>2800){const id=c.trail;for(let j=coins.length-1;j>=0;j--)if(coins[j].trail===id)coins.splice(j,1);spawnCoinTrail(true);i=Math.min(i,coins.length);}}
   for(let i=parts.length-1;i>=0;i--){const p=parts[i];p.x+=p.vx;p.y+=p.vy;p.h+=p.vh;p.vx*=.92;p.vy*=.92;if(!p.smoke){p.vh-=.15;if(p.h<1){p.h=1;p.vh*=-.3;}}p.life-=DT;if(p.life<=0)parts.splice(i,1);}
@@ -1353,7 +1411,9 @@ for(const col of blocks)for(const b of col)if((b.kind==='mountain'||b.kind==='in
   for(const col of blocks)for(const b of col)if(b.m2ramps)for(const rp of b.m2ramps)RAMPS.push(rp);
   RAMPS.push({x:RX0+JP-34,y:JY0+60,horiz:true},{x:RX1-JP+34,y:JY0+60,horiz:true});}
 function rampH(x,y){for(const r of RAMPS){const da=r.horiz?x-r.x:y-r.y,dc=r.horiz?y-r.y:x-r.x;if(Math.abs(da)<30&&Math.abs(dc)<50)return 11*(1-Math.abs(da)/30);}return 0;}
-for(let i=0;i<Math.round(70*(N*N)/324);i++){const p=curbPoint();barrels.push({x:p.x,y:p.y,alive:true,fuse:0,t:0});}/* MAP 2: scaled with the area */
+for(let i=RAMPS.length-1;i>=0;i--)if(inHwyBand(RAMPS[i].x,RAMPS[i].y))RAMPS.splice(i,1);// a ramp on the highway is a bump at 140 km/h
+for(let i=0;i<Math.round(70*(N*N)/324);i++){const p=curbPoint();if(!inHwyBand(p.x,p.y))barrels.push({x:p.x,y:p.y,alive:true,fuse:0,t:0});}/* MAP 2: scaled with the area */
+for(let i=0;i<36;i++)spawnCoinTrail(false);/* 36 trails stay under COIN_CAP with the longer jump trails */
 
 const curW=()=>WEAPONS[wIdx];
 const ownedW=()=>WEAPONS.filter(w=>arsenal[w.id]>0);
@@ -1786,12 +1846,66 @@ CAR_SPECS.push(
   {id:'monstert',name:'Mammut Monstertruck',color:'#e8a020',shape:'monster',w:58,h:36,speed:6.6,acc:1.1,grip:.85,armor:320,req:16000,tone:.5,mx:'monster',crush:1,mxd:'Krossar småbilar den landar på'},
   {id:'stridsv',name:'Kolossen Stridsvagn',color:'#4c5a33',shape:'tank2',w:66,h:34,speed:5.6,acc:.8,grip:.7,armor:1100,req:150000,tone:.45,mx:'tank',cannon:1,mxd:'Kanon på F · enormt pansar'});
 {const g=CAR_SPECS.find(s=>s.id==='glass');if(g){g.jingle=true;g.mxd='Spelar glasskioskens melodi';}}// the ice-cream van plays its jingle
-// A few civilians drive the new vehicles, so they can be car-jacked. Jacked ones get the garage upgrades (PROG_MUL) too.
-const MX_CIV=['sopa','glass','mc'];
-function mxMorph(c){const s=CAR_SPECS.find(q=>q.id===MX_CIV[ri(MX_CIV.length)]);if(!s||c.kind!=='civ'||c.spec)return c;applySpec(c,s);c.mxCiv=1;return c;}
-{const _mk=makeCar;makeCar=function(x,y,a,kind){const c=_mk(x,y,a,kind);if(kind==='civ'&&R()<.07)mxMorph(c);return c;};}
-for(const c of cars)if(c.kind==='civ'&&c.ai&&R()<.06)mxMorph(c);
-{const _tc=takeCar;takeCar=function(c){const r=c.maxHp>0?c.hp/c.maxHp:1;_tc(c);if(c.spec&&c.mxCiv&&!c.mxUp){c.mxUp=1;progApplyCar(c);c.hp=Math.max(1,c.hp*r);}};}
+/* ---- street variety: civilians drive real models, and parked cars wait along the way ----
+   About 6 in 10 civilian cars use a model (most garage cars plus five street-only ones, CIV_SPECS) instead of the plain sedan/van,
+   so a wrecked car can be swapped for something different. Jacked ones get the garage upgrades (PROG_MUL) too.
+   Parked cars (no driver, quick to take) stand on suburban driveways and just off the road in the countryside. */
+Object.assign(DICT,{"Långa Lisa":["Stretch Lisa","Lange Lisa","Lisa la Longue","Lisa la Larga","Lange Lise","Lange Lisa"],
+  "Pizza Pronto":["Pizza Pronto","Pizza Pronto","Pizza Pronto","Pizza Pronto","Pizza Pronto","Pizza Pronto"],
+  "Flamman":["The Flame","Die Flamme","La Flamme","La Llama","Flammen","Flammen"],
+  "Husbilen":["The Camper","Das Wohnmobil","Le Camping-car","La Autocaravana","Autocamperen","Bobilen"],
+  "Bubblan":["Bubble","Knutschkugel","La Bulle","La Burbuja","Boblen","Boblen"]});
+// Street-only models (not in the garage). mx picks the extra parts in MXB (3D part); civ marks them as street-only.
+const CIV_SPECS=[
+  {id:'limo',name:'Långa Lisa',color:'#121216',shape:'sedan',w:70,h:23,speed:7.2,acc:.95,grip:.95,armor:170,tone:.8,mx:'limo',civ:true},
+  {id:'pizza',name:'Pizza Pronto',color:'#d8262e',shape:'sedan',w:36,h:20,speed:6.8,acc:1.25,grip:1.2,armor:70,tone:1.4,mx:'pizza',civ:true},
+  {id:'hotrod',name:'Flamman',color:'#6e0d14',shape:'sport',w:48,h:22,speed:8.3,acc:1.55,grip:1.05,armor:110,tone:.6,mx:'hotrod',civ:true},
+  {id:'camper',name:'Husbilen',color:'#ece3cc',shape:'van',w:64,h:27,speed:5.8,acc:.8,grip:.85,armor:260,tone:.55,mx:'camper',civ:true},
+  {id:'bubble',name:'Bubblan',color:'#7fd6c8',shape:'sedan',w:30,h:18,speed:6.2,acc:1.3,grip:1.25,armor:55,tone:1.6,mx:'bubble',civ:true}];
+const allSpec=id=>CAR_SPECS.find(s=>s.id===id)||CIV_SPECS.find(s=>s.id===id);
+// [model, weight, recolour]. Fast top cars are rare finds; recoloured models take a random street colour so they do not all match.
+const CIV_POOL=[['vega',8,1],['taxi',9],['nord',5,1],['bonde',6,1],['tjur',5,1],['glass',2],['komet',1.5],['retro',2,1],['viper',.6],['sopa',2.5],['mc',2.5],
+  ['limo',2.5],['pizza',4],['hotrod',2.5],['camper',3.5],['bubble',4.5,1]].filter(e=>allSpec(e[0]));
+const STREET_COLS=CIV_COLORS.concat(['#8fb8de','#c94f7c','#e8d8b8','#4a5a3a','#ff9e3d','#5a2a2a']);
+function pickCivSpec(maxW){const pool=CIV_POOL.filter(e=>allSpec(e[0]).w<=(maxW||999));let r=R()*pool.reduce((a,e)=>a+e[1],0);
+  for(const e of pool){r-=e[1];if(r<=0)return e;}return pool[pool.length-1];}
+function civStyle(c,maxW){const e=pickCivSpec(maxW);if(!e||c.kind!=='civ'||c.spec)return c;applySpec(c,allSpec(e[0]));if(e[2])c.color=pick(STREET_COLS);c.mxCiv=1;return c;}
+const makeCarPlain=makeCar;// before the styling wrapper: parked cars pick a model that fits their spot
+{const _mk=makeCar;makeCar=function(x,y,a,kind){const c=_mk(x,y,a,kind);if(kind==='civ'&&R()<.62)civStyle(c);return c;};}
+for(const c of cars)if(c.kind==='civ'&&c.ai&&R()<.62)civStyle(c);
+// Taking a model shows its name, so the player knows what they just got.
+{const _tc=takeCar;takeCar=function(c){const r=c.maxHp>0?c.hp/c.maxHp:1;_tc(c);if(c.spec&&c.mxCiv&&!c.mxUp){c.mxUp=1;progApplyCar(c);c.hp=Math.max(1,c.hp*r);
+  if(state==='play')pushFeed(tr(c.spec.name),c.spec.glow||'#7dffa8');}};}
+// Parking spots, found once: driveways in front of suburban houses, and 30 inside the edge of countryside blocks
+// (clear of the fences and cones that props put 9-17 inside the edge), parallel to the road. Driveways are only 22-42
+// long, so a car parks with its tail 3 from the house and its nose over the sidewalk, never out on the street (y1).
+const PARK_RURAL=new Set(['farm','forest','beach','harbor','industrial','airport','desert','mountain','construction']);
+let PARK_SPOTS=null;
+function parkSpots(){if(PARK_SPOTS)return PARK_SPOTS;PARK_SPOTS=[];
+  for(const col of blocks)for(const b of col){
+    if(b.kind==='suburb')for(const h of b.bld){if(h.type!=='house')continue;const dz=h.y+h.h,len=b.by+BS-SW-dz;if(len<=4||len>=80)continue;// the driveways drawn in the 3D ground
+      PARK_SPOTS.push({x:h.x+h.w*.7,y:dz+len/2,y0:dz+3,y1:b.by+BS-3,a:PI/2,maxW:b.by+BS-3-(dz+3)});}
+    else if(PARK_RURAL.has(b.kind))for(let t=60;t<=BS-60;t+=90)for(const[x,y,a]of[[b.bx+t,b.by+30,0],[b.bx+t,b.by+BS-30,PI],[b.bx+30,b.by+t,PI/2],[b.bx+BS-30,b.by+t,-PI/2]])
+      if(freeCircle(x,y,26)&&!inHwyBand(x,y)&&!riverHit(x,y)&&!nearRamp(x,y,24))PARK_SPOTS.push({x,y,a,maxW:999});}
+  return PARK_SPOTS;}
+// Keeps about PARK_N parked cars within 1400 of the player, placed 450-1350 away so they do not pop up in view.
+// Parked cars are ordinary driverless civilians (ai false), so the existing rule removes them again past 1400.
+const PARK_N=12;let parkClock=0;
+function parkTick(){if(state!=='play'||(++parkClock%20))return;const S=parkSpots();if(!S.length)return;
+  let n=0;for(const c of cars)if(c.parked&&!c.driven&&dist(c.x,c.y,player.x,player.y)<1400)n++;
+  for(let k=0;k<3&&n<PARK_N;k++)for(let t=0;t<30;t++){const s=S[ri(S.length)],d=dist(s.x,s.y,player.x,player.y);if(d<450||d>1350)continue;
+    if(cars.some(o=>Math.abs(o.x-s.x)<50&&Math.abs(o.y-s.y)<50))continue;
+    const c=makeCarPlain(s.x,s.y,s.a,'civ');if(R()<.85)civStyle(c,s.maxW);if(c.w>s.maxW)continue;
+    if(s.y0!==undefined)c.y=s.y0+c.w/2;// driveway: tail against the house end
+    if(carHits(c,c.x,c.y,c.a))continue;// a tree or wall in the way
+    c.ai=false;c.parked=true;c.v=0;cars.push(c);n++;break;}}
+{const _uw=updateWorld;updateWorld=function(){_uw();parkTick();};}
+// Parked cars stand on sidewalks and driveways, so walkers turn away from them rather than walking through.
+// (updatePed only blocks a step that would enter a car, so a walker spawned inside one can still walk out.)
+let parkedNow=[],parkedAt=-1;
+function pedOnParked(x,y){if(parkedAt!==T){parkedAt=T;parkedNow=cars.filter(c=>c.parked&&!c.driven&&c.hp>0);}
+  for(const c of parkedNow){const dx=x-c.x,dy=y-c.y;if(Math.abs(dx)>40||Math.abs(dy)>40)continue;const ca=Math.cos(c.a),sa=Math.sin(c.a);
+    if(Math.abs(dx*ca+dy*sa)<c.w/2+4&&Math.abs(-dx*sa+dy*ca)<c.h/2+4)return true;}return false;}
 
 /* ---- power-ups: appended to POWER (fx timers, names and colours go in the existing tables) ---- */
 POWER.push(
@@ -2789,9 +2903,10 @@ function syncScene(){
   playerRing.position.set(player.x,groundY(player.x,player.y)+.6,player.y);
   playerLight.position.set(player.x,40,player.y);
   const cs=new Set();
-  {let n=0;const sp=T*3;for(const c of coins){if(Math.abs(c.x-camX)>1300||Math.abs(c.y-camY)>1300||n>=COIN_MAX)continue;const gy=groundY(c.x,c.y),y=gy+10+Math.sin(c.t*4)*1.5;
+  {let n=0;const sp=T*3;for(const c of coins){if(Math.abs(c.x-camX)>1300||Math.abs(c.y-camY)>1300||n>=COIN_MAX)continue;const gy=groundY(c.x,c.y),ch=c.h||0,y=gy+10+ch+Math.sin(c.t*4)*1.5;
       E.set(0,c.t*3,0);Q.setFromEuler(E);V.set(c.x,y,c.y);S.set(1,1,1);M4.compose(V,Q,S);coinI.setMatrixAt(n,M4);coinRimI.setMatrixAt(n,M4);
-      E.set(0,0,0);Q.setFromEuler(E);V.set(c.x,gy+.4,c.y);S.set(38,1,38);M4.compose(V,Q,S);coinGlowI.setMatrixAt(n,M4);n++;}
+      // the ground glow shrinks under coins high in the air (it marks the jump line) and is left out over the river
+      const gk=ch>=3&&riverHit(c.x,c.y)?0:38/(1+ch/22);E.set(0,0,0);Q.setFromEuler(E);V.set(c.x,gy+.4,c.y);S.set(gk||.001,1,gk||.001);M4.compose(V,Q,S);coinGlowI.setMatrixAt(n,M4);n++;}
     for(const im of[coinI,coinRimI,coinGlowI]){im.count=n;im.instanceMatrix.needsUpdate=true;}}
   const tg=mission?(mission.stage===0?mission.a:mission.b):null;beam.visible=ring.visible=!!tg&&state!=='start';
   if(tg){beam.position.set(tg.x,280,tg.y);ring.position.set(tg.x,CURB+.8,tg.y);const s=1+Math.sin(T*5)*.08;ring.scale.set(s,1,s);beam.material.opacity=.3+Math.sin(T*3)*.08;}
@@ -2885,7 +3000,7 @@ const LWE=[...Object.values(sideMats),...houseMats,...SHOPS];LWE.forEach(m=>{m.u
     LWD.position.set(x,y+21,z);LWD.scale.set(1,1,1);LWD.updateMatrix();fl.setMatrixAt(i,LWD.matrix);});
   fl.frustumCulled=po.frustumCulled=false;scene.add(fl);scene.add(po);}
 /* ---- traffic lights at city / suburb crossings ---- */
-{const L=[];for(let i=1;i<N;i++)for(let j=1;j<N;j++){const k=[blocks[i-1][j-1],blocks[i][j-1],blocks[i-1][j],blocks[i][j]].some(b=>b.kind==='downtown'||b.kind==='suburb');if(k)L.push({x:i*CELL-8,z:j*CELL-40,off:(i*7+j*13)%14,st:-1,i:L.length});}
+{const L=[];for(let i=1;i<N;i++)for(let j=1;j<N;j++){const q=[blocks[i-1][j-1],blocks[i][j-1],blocks[i-1][j],blocks[i][j]],k=q.some(b=>b.kind==='downtown'||b.kind==='suburb')&&!q.some(b=>b.kind==='highway');if(k)L.push({x:i*CELL-8,z:j*CELL-40,off:(i*7+j*13)%14,st:-1,i:L.length});}
   const n=L.length,pole=new THREE.InstancedMesh(BOX,lam('#2c2e3a'),n),head=new THREE.InstancedMesh(BOX,lam('#0d0e14'),n);
   const lamps=['#ff2a2a','#ffc400','#28ff6a'].map(c=>{const m=new THREE.InstancedMesh(BOX,basic(c),n);m.frustumCulled=false;scene.add(m);return m;});
   L.forEach((l,i)=>{LWD.rotation.set(0,0,0);LWD.scale.set(1.2,34,1.2);LWD.position.set(l.x,CURB+17,l.z);LWD.updateMatrix();pole.setMatrixAt(i,LWD.matrix);
@@ -3125,6 +3240,13 @@ const M2_POOLS=[];
       gtM=new THREE.MeshBasicMaterial({map:gt,side:THREE.DoubleSide});
     for(const col of blocks)for(const b of col){if(!b.hw||b.hw==='c')continue;const yy=b.bridge?.5:.2;
       addStatic(PLANE_UP,mkM,mtx(b.bx+BS/2,yy,b.by+BS/2,BS,1,BS,b.hw==='v'?PI/2:0));}
+    // The cross streets between ring blocks get the same highway surface and lane markings, so the carriageway runs
+    // unbroken. u is scaled by ROAD/BS so texture size and the 60-unit dash rhythm carry straight on from the blocks.
+    {const gapGeo=PLANE_UP.clone(),uv=gapGeo.attributes.uv;for(let i=0;i<uv.count;i++)uv.setX(i,uv.getX(i)*ROAD/BS);
+      for(let k=RING0+1;k<=RING1;k++){const gc=k*CELL+ROAD/2;
+        for(const r of[RING0,RING1]){const bc=r*CELL+ROAD+BS/2;
+          addStatic(gapGeo,MAP2_GROUND.highway,mtx(gc,.17,bc,ROAD,1,BS,0));addStatic(gapGeo,mkM,mtx(gc,.2,bc,ROAD,1,BS,0));
+          addStatic(gapGeo,MAP2_GROUND.highway,mtx(bc,.17,gc,ROAD,1,BS,PI/2));addStatic(gapGeo,mkM,mtx(bc,.2,gc,ROAD,1,BS,PI/2));}}}
     const span=BS+2*ROAD+16;
     const gantry=(x,z,alongX)=>{ // alongX: the beam runs along x (left/right columns of the ring), else along z
       if(alongX){cap(x,40,z,span,3,3,postM);cap(x-span/2,20,z,3,40,3,postM);cap(x+span/2,20,z,3,40,3,postM);
@@ -3484,6 +3606,33 @@ MXB.garbage=(g,c)=>{const u=g.userData,L=c.w,Wd=c.h;const B=u.body[0].material;
   P(basic('#d8d0b0'),4,3,5,-L*.3,29.4,4);P(basic('#7a9a5a'),5,2.6,4,-L*.12,29,-5);
   const bin=P(MXM.mid,5,7,8,-L/2-5,9,0);u.mxBin=bin;
   u.mxAnim=(c2,m,u2)=>{u2.mxBin.position.y=9+(Math.sin(T*3)*.5+.5)*(Math.abs(c2.v)>1?3:7);};};
+/* Street-only models (CIV_SPECS). These keep the stock body and add parts on top; body-coloured parts join u.body so
+   they turn to wreck material with the rest. Sedan roof is at 18.4 over x -0.29L..0.11L, the van roof at 22. */
+const CIVM={white:lam('#f2f0ea'),brown:lam('#6a4428'),flame:new THREE.MeshBasicMaterial({side:THREE.DoubleSide,alphaTest:.5,transparent:true,
+    map:canvasTex(256,64,(g,w,h)=>{for(const[col,s]of[['#ff4a1a',1],['#ffb020',.66],['#fff07a',.36]]){g.fillStyle=col;g.beginPath();g.moveTo(w,h*.5-h*.42*s);
+      for(let i=0;i<=6;i++){const x=w-(i/6)*w*(.35+.65*s),y=h*.5+(i%2?1:-1)*h*.42*s*(1-i/8);g.quadraticCurveTo(x+18,h*.5,x,y);}g.lineTo(w,h*.5+h*.42*s);g.closePath();g.fill();}})}),
+  pizza:new THREE.MeshBasicMaterial({map:canvasTex(128,48,(g,w,h)=>{g.fillStyle='#fff8ea';g.fillRect(0,0,w,h);g.fillStyle='#d8262e';g.fillRect(0,0,w,6);g.fillRect(0,h-6,w,6);
+    g.font='bold 30px Impact, Arial Black, sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('PIZZA',w/2,h/2+1);})})};
+const civPart=(g,c)=>{const u=g.userData,B=u.body[0].material;return(m,...a)=>{const o=mxBox(g,m===true?B:m,...a);if(m===true)u.body.push(o);return o;};};
+MXB.limo=(g,c)=>{const L=c.w,Wd=c.h,P=civPart(g,c);
+  P(MXM.chrome,L*.94,.6,Wd+.3,0,9.4,0);// chrome waist line down both sides
+  for(const x of[-L*.21,-L*.05])P(MXM.dark,1.4,6.4,Wd-3.6,x,14.6,0);// extra pillars: the long cabin reads as a row of windows
+  P(MXM.dark,.5,7,.5,-L*.36,14.5,Wd*.3);P(MXM.chrome,2.2,.8,2.2,L*.47,11.4,0);};// antenna, bonnet ornament
+MXB.pizza=(g,c)=>{const L=c.w,P=civPart(g,c);
+  P(CIVM.pizza,12,4.6,3.2,-L*.09,21.4,0);P(MXM.dark,8,.6,2,-L*.09,19.1,0);// roof sign on a mount
+  P(CIVM.white,9,2.4,9,-L*.36,12.3,0);};// a stack of pizza boxes in the tiny boot
+MXB.hotrod=(g,c)=>{const L=c.w,Wd=c.h,P=civPart(g,c);
+  P(MXM.chrome,7,4,7.5,L*.27,11.2,0);P(MXM.dark,5,1.2,6,L*.27,13.8,0);for(const z of[-2.2,2.2])P(MXM.chrome,1.6,2.6,1.6,L*.27,15.4,z);// blower + stacks
+  for(const z of[-1,1])P(MXM.chrome,L*.62,1.3,1.3,-L*.04,3.2,z*(Wd/2+.7));// side pipes
+  for(const z of[-1,1]){const f=new THREE.Mesh(VPLANE,CIVM.flame);f.scale.set(L*.5,5.2,1);f.position.set(L*.2,7.4,z*(Wd/2+.12));if(z<0)f.rotation.y=PI;g.add(f);}};
+MXB.camper=(g,c)=>{const L=c.w,Wd=c.h,P=civPart(g,c),h=L/2;
+  P(true,16,6,Wd-2,h-10,25,0);P(glassMat,.6,2.4,Wd-6,h-1.8,25,0);// sleeping bunk over the cab, with its little window
+  P(CIVM.brown,L*.96,2.4,Wd+.3,-1,12.6,0);P(CIVM.brown,L*.6,1,Wd+.3,-L*.18,15.4,0);// two-tone side stripes
+  for(const x of[-h*.25,-h*.62])P(glassMat,9,5,Wd+.25,x,17.5,0);// side windows
+  P(CIVM.white,9,2.2,9,-h*.42,23.1,0);P(MXM.rubber,2.4,8.4,8.4,-h-1.2,12,0);};// roof AC unit, spare wheel on the back
+MXB.bubble=(g,c)=>{const L=c.w,Wd=c.h,P=civPart(g,c);
+  P(CIVM.white,L*.4+.5,1.4,Wd-4.2,-L*.09,18.7,0);// white roof cap: two-tone
+  for(const z of[-1,1])P(MXM.head,.8,2.6,2.6,L/2+.2,8.6,z*(Wd/2-3.4));};// big round-eye headlights
 {const _bc=buildCar;buildCar=function(c){const g=_bc(c),t=c.spec&&c.spec.mx;if(t&&MXB[t])MXB[t](g,c);return g;};}
 
 /* per-frame animation of the new models + squashed cars (monster truck) */
@@ -3588,6 +3737,8 @@ const mmBase=document.createElement('canvas');mmBase.width=mmBase.height=1536;
   g.fillStyle='#1d4a7a';g.fillRect(RX0*s,0,RIV_W*s,1536);
   g.fillStyle='#5b5f78';for(const iv of BR_IV)g.fillRect((RX0-14)*s,iv[0]*s,(RIV_W+28)*s,(iv[1]-iv[0])*s);
   g.fillRect(RX0*s,JY0*s,JP*s,ROAD*s);g.fillRect((RX1-JP)*s,JY0*s,JP*s,ROAD*s);
+  {const lo=RING0*CELL+ROAD,len=(RING1+1)*CELL-lo;g.fillStyle=BIOMES.highway.map;
+    for(const r of[RING0,RING1]){const b0=r*CELL+ROAD;g.fillRect(lo*s,b0*s,len*s,BS*s);g.fillRect(b0*s,lo*s,BS*s,len*s);}}
   g.strokeStyle='#e8c030';g.lineWidth=Math.max(1,6*s);g.strokeRect(HW0*s,HW0*s,(HW1-HW0)*s,(HW1-HW0)*s);})();
 function renderMini(){const DPR=Math.min(2,window.devicePixelRatio||1),Sz=Math.round(mini.clientWidth*DPR);if(mini.width!==Sz){mini.width=mini.height=Sz;}
   const sc=Sz/2400,c=Sz/2;mctx.setTransform(1,0,0,1,0,0);mctx.fillStyle='#0a1830';mctx.fillRect(0,0,Sz,Sz);
