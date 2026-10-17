@@ -122,6 +122,22 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--ink);overflow
 .st i{display:block;height:5px;background:rgba(242,234,216,.12)}
 .st i b{display:block;height:100%;background:var(--c)}
 .gcar .tagl{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+/* 2.4: car list on the left, a 3D preview of the hovered/selected car with its stats and the Done button on the right */
+.garlay{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,340px);gap:20px;align-items:start}
+.gleft{display:flex;flex-direction:column;gap:22px;min-width:0}
+.garlay .gcars{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.gleft #gup{margin:0}
+.gside{position:sticky;top:12px;display:flex;flex-direction:column;gap:12px;background:rgba(23,17,28,.88);border:2px solid rgba(242,234,216,.14);padding:12px;color:#f2ead8}
+#garView{width:100%;aspect-ratio:4/3;display:block;background:radial-gradient(ellipse at 50% 72%,rgba(255,243,226,.22),rgba(10,12,26,.6) 72%)}
+#garView.locked{filter:saturate(.75) brightness(.8)}
+.gpinfo{display:flex;flex-direction:column;gap:6px}
+.gpname{font-family:var(--small);text-transform:uppercase;font-size:20px;line-height:1.1}
+.gside .st{font-size:12px;grid-template-columns:96px 1fr}
+.gside .st i{height:7px}
+.gside .tagl{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.gside .mlist{border-top:1px solid rgba(242,234,216,.14);padding-top:8px}
+.gside .mitem{color:#f2ead8}
+@media (max-width:760px){.garlay{grid-template-columns:1fr}.gside{position:static;order:-1}#garView{aspect-ratio:16/9}}
 .mute{position:fixed;left:16px;bottom:calc(64px + env(safe-area-inset-bottom,0px));z-index:12;font-family:var(--ui);font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;background:var(--panel);color:var(--ink);border:1px solid rgba(242,234,216,.3);padding:6px 10px;cursor:pointer}
 .mute:focus-visible{outline:2px solid var(--signal)}
 #garage:not([hidden])~.mute{display:none}
@@ -474,7 +490,7 @@ button.bpt{cursor:pointer}button.bpt:hover,button.bpt:focus{outline:none;border-
       <button id="hStart" class="mitem">Så spelar du</button>
       <button id="setStart" class="mitem">Inställningar</button>
     </nav>
-    <div class="foot"><span id="bestStart">Inget rekord än</span><span id="selStart"></span><span class="ver">Version 2.3</span></div>
+    <div class="foot"><span id="bestStart">Inget rekord än</span><span id="selStart"></span><span class="ver">Version 2.4</span></div>
   </div>
 </section>
 
@@ -599,8 +615,14 @@ button.bpt{cursor:pointer}button.bpt:hover,button.bpt:focus{outline:none;border-
   <div class="wrap">
     <div class="ghead"><div><div class="eyebrow">Välj din bil</div><h2 class="title sm">Garage</h2></div><span id="gcount">1 / 8 bilar</span><span id="gwallet" class="gwallet"><i class="coin" aria-hidden="true"></i><span id="gwc">0</span></span></div>
     <p class="gsub">Nya bilar låses upp när du når poänggränsen under en jakt, när du hittar en guldnyckel, eller köps för mynt du samlar på gatorna.</p>
-    <div id="gcars" class="gcars"></div>
-    <nav class="mlist"><button id="gback" class="mitem">Klar</button></nav>
+    <div class="garlay">
+      <div class="gleft"><div id="gcars" class="gcars"></div></div>
+      <aside class="gside">
+        <canvas id="garView" aria-label="Förhandsvisning av bil"></canvas>
+        <div class="gpinfo"><div id="gpName" class="gpname"></div><div id="gpTrait" class="mxdesc"></div><div id="gpStats" class="st"></div><div id="gpTag" class="tagl"></div></div>
+        <nav class="mlist"><button id="gback" class="mitem">Klar</button></nav>
+      </aside>
+    </div>
   </div>
 </section>
 
@@ -708,7 +730,7 @@ const placeName=b=>(PLACES[LANG]||PLACES.sv)[b]||b;
 function tr(s){if(LANG==='sv')return s;const e=DICT[s];return e&&e[LI[LANG]]!=null?e[LI[LANG]]:s;}
 function trf(s,v){let r=tr(s);for(const k in v)r=r.split('{'+k+'}').join(v[k]);return r;}
 const LOCALE=()=>(LANGS.find(x=>x[0]===LANG)||LANGS[1])[2];
-const VERSION='2.3';
+const VERSION='2.4';
 if(typeof THREE==='undefined'){const e=document.createElement('div');e.id='err';e.textContent=tr('3D-motorn kunde inte laddas. Kontrollera internetanslutningen och ladda om sidan.');document.body.appendChild(e);throw new Error('three missing');}
 const PI=Math.PI,TAU=PI*2,DT=1/60;
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
@@ -1154,6 +1176,13 @@ function unstick(c){const hw=c.w/2,hh=c.h/2;
   // still wedged (e.g. squeezed into an alley): drop the car onto the nearest street
   if(carHits(c,c.x,c.y,c.a)){const rx=clamp(Math.round((c.x-60)/CELL),0,N)*CELL+60,ry=clamp(Math.round((c.y-60)/CELL),0,N)*CELL+60;
     if(Math.abs(c.x-rx)<Math.abs(c.y-ry)){c.x=rx;c.a=Math.sin(c.a)>=0?PI/2:-PI/2;}else{c.y=ry;c.a=Math.cos(c.a)>=0?0:PI;}c.v*=.3;}}
+// Drift tuning (2.4, per 60 Hz tick). DRIFT_MIN_V starts a drift (~54 km/h), DRIFT_KEEP_V keeps one going (~35 km/h).
+const DRIFT_MIN_V=2.5,DRIFT_KEEP_V=1.6,DRIFT_YAW=1.3,DRIFT_COUNTER=1.35,DRIFT_KICK=4,DRIFT_FOLLOW=.075,DRIFT_FOLLOW_OFF=.11,
+  DRIFT_MAX_SLIP=1.05,DRIFT_SCRUB=.022,DRIFT_SHOW=.17,DRIFT_EXIT=.5;
+// How far the car is sliding sideways (radians, signed: nose left of travel is negative).
+const carSlip=c=>c.ma===undefined?0:angDiff(c.a,c.ma);
+// A real slide: enough angle and speed, wheels on the ground. Drift points, tyre smoke and the tutorial use this.
+const isSliding=c=>!!c&&!c.air&&Math.abs(c.v)>DRIFT_KEEP_V&&Math.abs(carSlip(c))>DRIFT_SHOW;
 function drive(c,thr,steer,hb){
   if(c.hp<=0){thr=0;steer=0;}
   const air=!!c.air;if(air){thr=0;steer=0;hb=false;}
@@ -1164,15 +1193,28 @@ function drive(c,thr,steer,hb){
   if(nitro){max+=3;acc*=1.8;}
   if(fx.slow>0&&isEnemy(c)){max*=.4;acc*=.5;}
   // power-limited: strong pull from standstill that fades towards top speed
-  if(thr>0){if(c.v<0)c.v+=.22*thr;else c.v+=.036*acc*(1-Math.pow(clamp(c.v/max,0,1),1.7))*thr;}
+  if(thr>0){if(c.v<0)c.v+=.22*thr;else c.v+=.036*acc*(1-Math.pow(clamp(c.v/max,0,1),1.7))*thr*Math.max(.3,Math.cos(carSlip(c)));}// sideways, the engine pushes less along the path
   else if(thr<0){if(c.v>0)c.v-=.2*-thr;else c.v-=.045*-thr;}
   if(c.v>max)c.v=Math.max(max,c.v*.99);c.v=Math.max(c.v,-2.6);
   if(!thr&&!air)c.v*=.99;c.v*=air?.999:thr>0?.9996:.998;if(hb)c.v*=.955;
   c.steerVis=steer;
-  const dr=!!c.drifting,spd=Math.abs(c.v),na=c.a+steer*.05*grip*(hb?1.7:dr?1.9:1)*clamp(c.v/2.2,-1,1)*(1-Math.min(.5,spd/max*.5));
-  if(!carHits(c,c.x,c.y,na))c.a=na;
-  // Drifting: the nose turns faster than the car's travel direction, so it slides sideways and bleeds a little speed.
-  if(c===player.car){if(c.ma===undefined)c.ma=c.a;c.ma=lerpAngle(c.ma,c.a,dr?.06:.35);if(dr)c.v*=.997;}else c.ma=c.a;
+  const dr=!!c.drifting,spd=Math.abs(c.v),turn=steer*.05*grip*clamp(c.v/2.2,-1,1)*(1-Math.min(.5,spd/max*.5));
+  if(c===player.car){if(c.ma===undefined)c.ma=c.a;
+    // Drift (2.4): the nose (c.a) rotates with some weight (yaw rate c.yr) and the travel direction (c.ma) follows it slowly,
+    // so the slide angle settles where the two rates meet. Counter-steering bites harder, the slide scrubs speed by its angle,
+    // and grip comes back gradually when Space is let go instead of snapping straight.
+    const slip0=angDiff(c.a,c.ma);let want=turn*(dr?DRIFT_YAW:1);
+    if(dr&&steer&&Math.sign(steer)!==Math.sign(slip0))want*=DRIFT_COUNTER;
+    if(dr&&!c.wasDr&&steer)c.yr=(c.yr||0)+turn*DRIFT_KICK;// flick into the slide
+    c.yr=(c.yr||0)+(want-(c.yr||0))*(dr?.16:.6);c.wasDr=dr;
+    const na=c.a+c.yr;if(!carHits(c,c.x,c.y,na))c.a=na;else c.yr=0;
+    // After a drift the tyres hook up over DRIFT_EXIT seconds: the slide follow rate stays at DRIFT_FOLLOW_OFF, then ramps to normal grip (.35).
+    if(dr)c.exitT=DRIFT_EXIT;else if(c.exitT>0)c.exitT-=DT;
+    const slip=angDiff(c.a,c.ma),ex=c.exitT>0?Math.min(1,c.exitT/DRIFT_EXIT*1.6):0,gk=Math.pow(grip,1.5),k=air?.35:dr?(thr>0?DRIFT_FOLLOW:DRIFT_FOLLOW_OFF)*gk:.35-(.35-Math.min(.3,DRIFT_FOLLOW_OFF*gk))*ex;// grippy cars hold a tighter angle
+    c.ma=lerpAngle(c.ma,c.a,k);
+    {const s2=angDiff(c.a,c.ma);if(Math.abs(s2)>DRIFT_MAX_SLIP)c.ma=c.a-Math.sign(s2)*DRIFT_MAX_SLIP;}
+    if(!air){const sn=Math.sin(slip);c.v*=1-DRIFT_SCRUB*sn*sn;}}
+  else{const na=c.a+turn*(hb?1.7:1);if(!carHits(c,c.x,c.y,na))c.a=na;c.ma=c.a;}
   // sub-stepped move so fast cars can never tunnel into a wall; slide along walls when possible
   const steps=Math.max(1,Math.ceil(Math.abs(c.v)/3)),sx=Math.cos(c.ma)*c.v/steps,sy=Math.sin(c.ma)*c.v/steps;let hit=false,slid=false;
   for(let i=0;i<steps;i++){
@@ -1257,7 +1299,8 @@ function updatePlayer(){
       if(want){if(!player.nitroOn)sfx('boost');player.nitro=Math.max(0,player.nitro-DT/(2.6*PROG_MUL.nitro));player.nitroWait=1.2;}
       else if(player.nitroWait>0)player.nitroWait-=DT;else player.nitro=Math.min(1,player.nitro+DT*PROG_MUL.nitro/9);
       player.nitroOn=want;}
-    c.drifting=inp.drift&&Math.abs(c.v)>2.5&&!c.air;
+    if(player.lastCar!==c){player.lastCar=c;c.ma=c.a;c.yr=0;c.wasDr=false;c.exitT=0;}// a car that sat parked or was driven by AI carries no old slide
+    c.drifting=inp.drift&&Math.abs(c.v)>(c.drifting?DRIFT_KEEP_V:DRIFT_MIN_V)&&!c.air;
     drive(c,-inp.y,inp.x,false);player.x=c.x;player.y=c.y;player.a=c.a;
     if((fx.nitro>0||player.nitroOn)&&c.v>3)for(let i=0;i<2;i++){const bx=c.x-Math.cos(c.a)*c.w/2,by=c.y-Math.sin(c.a)*c.w/2;
       parts.push({x:bx+(R()-.5)*8,y:by+(R()-.5)*8,h:6,vh:R()*.5,vx:-Math.cos(c.a)*2+(R()-.5),vy:-Math.sin(c.a)*2+(R()-.5),life:.35,max:.35,col:R()<.5?'#ff8a1f':'#ffd23f',smoke:false});}}
@@ -1560,8 +1603,8 @@ function updateCombat(){
   if(state==='play'&&pc&&!pc.air){const sp=Math.abs(pc.v);
     if(sp>4.5)for(const c of cars){if(!isEnemy(c)||c.hp<=0)continue;const d=dist(c.x,c.y,pc.x,pc.y),sum=pc.w+c.w;
       if(d<sum/2+14&&d>sum/4+10&&(!c.nmT||T-c.nmT>3)){c.nmT=T;addScore(50);chal('near',1);pushFeed(tr('NÄRA ÖGAT')+' +'+(fx.x2>0?100:50),'#ffd23f');}}
-    if(pc.drifting&&Math.abs(pc.steerVis||0)>.3){driftT+=DT;
-      for(const s of[-1,1])if(R()<.6){const bx=pc.x-Math.cos(pc.a)*pc.w*.4-Math.sin(pc.a)*s*pc.h*.45,by=pc.y-Math.sin(pc.a)*pc.w*.4+Math.cos(pc.a)*s*pc.h*.45;
+    if(isSliding(pc)){driftT+=DT;
+      for(const s of[-1,1])if(R()<.25+Math.min(.6,Math.abs(carSlip(pc)))){const bx=pc.x-Math.cos(pc.a)*pc.w*.4-Math.sin(pc.a)*s*pc.h*.45,by=pc.y-Math.sin(pc.a)*pc.w*.4+Math.cos(pc.a)*s*pc.h*.45;
         parts.push({x:bx,y:by,h:3,vh:.25,vx:(R()-.5)*.6,vy:(R()-.5)*.6,life:.9,max:.9,col:'#c9c6d2',smoke:true});}}
     else if(driftT>0){chal('drift',driftT);if(driftT>.4){const pts=Math.round(driftT*220);addScore(pts);pushFeed(tr('DRIFT')+' '+driftT.toFixed(1)+' s +'+fmtScore(pts*(fx.x2>0?2:1)),'#3de0ff');}driftT=0;}}
   for(let i=feed.length-1;i>=0;i--){feed[i].t-=DT;if(feed[i].t<=0)feed.splice(i,1);}
@@ -1685,7 +1728,7 @@ function progUI(){try{
     (document.head||document.documentElement).appendChild(st);}
   const sw=document.querySelector('#start .wrap');if(sw&&!document.getElementById('progBadge')){const d=document.createElement('div');d.id='progBadge';sw.insertBefore(d,sw.querySelector('.mlist'));}
   const hs=document.querySelector('.hsub');if(hs&&!document.getElementById('lvlchip')){const s=document.createElement('span');s.id='lvlchip';hs.appendChild(s);}
-  const gw=document.querySelector('#garage .wrap');if(gw&&!document.getElementById('gup')){const d=document.createElement('div');d.id='gup';gw.insertBefore(d,document.getElementById('gcars'));}
+  const gw=document.querySelector('#garage .wrap');if(gw&&!document.getElementById('gup')){const d=document.createElement('div');d.id='gup';gw.querySelector('.gleft').appendChild(d);}
   const ow=document.querySelector('#over .stats');if(ow&&!document.getElementById('proglvl')){const d=document.createElement('div');d.id='proglvl';d.className='proglvl';ow.parentNode.insertBefore(d,ow.nextSibling);}
 }catch(e){}}
 function progBadge(){progUI();const e=document.getElementById('progBadge');if(!e)return;const p=progLevel();e.innerHTML='';
@@ -2394,6 +2437,7 @@ Object.assign(DICT,{"Kör":["Drive","Fahren","Conduis","Conduce","Kør","Kjør"]
   "Fly, kvadda dem och samla mynt. Lycka till!":["Escape, wreck them and grab coins. Good luck!","Flieh, schrotte sie und sammle Münzen. Viel Glück!","Fuis, détruis-les et ramasse des pièces. Bonne chance !","Huye, destrózalos y recoge monedas. ¡Suerte!","Flygt, smadr dem og saml mønter. Held og lykke!","Flykt, knus dem og samle mynter. Lykke til!"],
   "Enter: hoppa över":["Enter: skip","Enter: überspringen","Entrée : passer","Enter: saltar","Enter: spring over","Enter: hopp over"],
   "Spela tutorialen":["Play the tutorial","Tutorial spielen","Jouer le tutoriel","Jugar el tutorial","Spil tutorialen","Spill opplæringen"],
+  "Förhandsvisning av bil":["Car preview","Fahrzeugvorschau","Aperçu de la voiture","Vista previa del coche","Forhåndsvisning af bil","Forhåndsvisning av bil"],
   "Nivå 1":["Level 1","Stufe 1","Niveau 1","Nivel 1","Niveau 1","Nivå 1"],
   "Lär dig kontrollerna":["Learn the controls","Lerne die Steuerung","Apprends les commandes","Aprende los controles","Lær styringen","Lær kontrollene"]});
 const TUT_STEPS=[
@@ -2424,7 +2468,7 @@ function tutTick(){if(!TUT.on)return;const s=TUT_STEPS[TUT.step];if(!s){tutEnd()
   if(!pc&&!player.jack&&(s.id==='drive'||s.id==='nitro'||s.id==='drift')){TUT.step=TUT_STEPS.findIndex(x=>x.id==='exit');tutNext();return;}
   if(s.id==='drive'&&pc)TUT.prog+=Math.abs(pc.v)/420;
   else if(s.id==='nitro'&&pc&&player.nitroOn)TUT.prog+=DT/.5;
-  else if(s.id==='drift'&&pc&&pc.drifting)TUT.prog+=DT/.6;
+  else if(s.id==='drift'&&isSliding(pc))TUT.prog+=DT/.6;
   else if(s.id==='exit'&&!pc&&!player.jack)TUT.prog=1;
   else if(s.id==='jack'){if(pc&&!player.jack)TUT.prog=1;else if(TUT.car&&TUT.car.stun>0&&!player.jack)TUT.car.stun=999;}
   else if(s.id==='go')TUT.prog=TUT.t/2.6;
@@ -2942,7 +2986,7 @@ function syncScene(){
     {const ms=c===player.car&&fx.monster>0?1.7:1;m.scale.set(ms,ms,ms);}
     m.position.set(c.x,groundY(c.x,c.y)+(c.ai?rampH(c.x,c.y):(c.z||0)),c.y);m.rotation.y=-c.a;m.rotation.z=c.air?clamp(c.vz*.07,-.45,.45):0;const u=m.userData;
     if(c.hp<=0&&!u.wrecked){u.wrecked=true;u.body.forEach(b=>b.material=wreckMat);u.cone.visible=false;}
-    if(u.door)u.door.rotation.y=-1.15*(c.doorOpen||0);for(let i=0;i<4;i++){u.wheels[i].rotation.z=-c.wheel;if(i<2)u.wheels[i].rotation.y=-(c.steerVis||0)*.4;}
+    if(u.door)u.door.rotation.y=-1.15*(c.doorOpen||0);for(let i=0;i<4;i++){u.wheels[i].rotation.z=-c.wheel;if(i<2)u.wheels[i].rotation.y=c===player.car&&isSliding(c)?clamp(carSlip(c)*.7-(c.steerVis||0)*.15,-.6,.6):-(c.steerVis||0)*.4;}
     if(c.kind==='cop'&&c.hp>0){const f=Math.floor(T*8)%2;u.red.material=f?redOn:redOff;u.blue.material=f?blueOff:blueOn;const d=dist(c.x,c.y,player.x,player.y);if(d<ncd){ncd=d;nearestCop=c;}}}
   for(const[c,m]of carMeshes)if(!seen.has(c)){scene.remove(m);carMeshes.delete(c);}
   if(nearestCop&&ncd<700){copLight.position.set(nearestCop.x,30,nearestCop.y);copLight.color.set(Math.floor(T*8)%2?0xff2846:0x3c78ff);copLight.intensity=2.6;}else copLight.intensity=0;
@@ -2979,7 +3023,7 @@ function animPed(m,p){const u=m.userData;m.position.set(p.x,groundY(p.x,p.y),p.y
 const CAM_WANT=new THREE.Vector3();
 function updateCamera(fk){fk=fk||1;
   const pc=player.car,tx=player.x,ty=player.y,sp=pc?Math.abs(pc.v):0;
-  const heading=pc?(pc.v<-1?pc.a+PI:pc.a):player.jack&&player.jack.phase!=='walk'?player.jack.c.a:player.a;// stay behind the car while jacking it
+  const heading=pc?(pc.v<-1?pc.a+PI:pc.a-carSlip(pc)*.55):player.jack&&player.jack.phase!=='walk'?player.jack.c.a:player.a;// stay behind the car while jacking it
   camA=lerpAngle(camA,heading,1-Math.pow(1-(pc?.07:.08),fk));
   const back=state==='start'?150:pc?92+sp*6:62,up=state==='start'?95:pc?40+sp*1.8:32;
   const dx=-Math.cos(camA),dy=-Math.sin(camA);let d=back;
@@ -3579,7 +3623,7 @@ function vfxUpdate(rdt){const slow=slowT>0?.35:1,dt=Math.min(rdt,.05)*slow,q=VQ(
         vp(VFIRE,px,py,gz+6,-ca*b1+ca*sp*.6,-sa*b1+sa*sp*.6,(R()-.5)*20,.17+R()*.08,9,2.5,.45,.78,1,1,.9,0);
         vp(VFIRE,px,py,gz+6,-ca*b2+ca*sp*.6,-sa*b2+sa*sp*.6,(R()-.5)*30,.26+R()*.12,12,3,1,.55+R()*.25,.08,.85,.9,0);}
       if(R()<.35)vp(VSMOKE,bx-ca*10,by-sa*10,gz+7,-ca*60,-sa*60,5,.45,6,34,.8,.85,1,.06,.93,0);}
-    if(pc.drifting&&Math.abs(pc.steerVis||0)>.3&&Math.abs(pc.v)>3){for(const s of[-1,1])if(R()<.8*q){const bx=pc.x-ca*pc.w*.38-sa*s*pc.h*.45,by=pc.y-sa*pc.w*.38+ca*s*pc.h*.45;
+    if(isSliding(pc)){for(const s of[-1,1])if(R()<(.3+Math.min(.6,Math.abs(carSlip(pc))))*q){const bx=pc.x-ca*pc.w*.38-sa*s*pc.h*.45,by=pc.y-sa*pc.w*.38+ca*s*pc.h*.45;
         vp(VSMOKE,bx,by,gz+3,(R()-.5)*30,(R()-.5)*30,14+R()*20,.8+R()*.5,9,38+R()*14,.78,.78,.82,.34,.95,-6);}}}
   // flying debris (boxes, then wheels)
   for(let pass=0;pass<2;pass++){const A=pass?vwh:vdb,im=pass?vwhI:vdbI;let n=0;
@@ -4002,21 +4046,31 @@ function drawCarPreview(cv2,s,locked){const g=cv2.getContext('2d'),W2=cv2.width,
   g.fillStyle=locked?'#555':'#ff2a3a';g.fillRect(x,y+5,3,8);g.fillRect(x,y+Wd-13,3,8);g.restore();
   if(locked){g.fillStyle='rgba(11,13,26,.55)';g.fillRect(0,0,W2,H2);g.fillStyle='#f2ead8';g.font='700 13px "Chakra Petch", sans-serif';g.textAlign='center';g.fillText(tr('LÅST'),W2/2,H2-10);}}
 let garageFrom='start';
+// Status line for a car: selected / pick / how to unlock it (text + colour). Used by the cards and the preview panel.
+function carTag(s){const own=owns(s.id),sel=garage.sel===s.id,price=carPrice(s);
+  return[sel?tr('Vald'):own?tr('Välj'):s.ach?tr('Klara alla prestationer'):(wallet>=price?trf('Köp för {c} mynt',{c:fmtScore(price)}):trf('Lås upp: {p} p eller {c} mynt',{p:fmtScore(s.req),c:fmtScore(price)})),
+    sel?'#ffd23f':own?'#7dffa8':s.ach?'#3de0ff':'rgba(242,234,216,.65)'];}
+function carStats(st,s){st.innerHTML='';
+  for(const[k,lab]of[['speed',tr('Toppfart')],['acc',tr('Acceleration')],['grip',tr('Väggrepp')],['armor',tr('Pansar')]]){
+    const l=document.createElement('span');l.textContent=lab;const bar=document.createElement('i');const fill=document.createElement('b');
+    fill.style.width=Math.min(100,Math.round(s[k]/STAT_MAX[k]*100))+'%';fill.style.setProperty('--c',s.glow||'#ffd23f');bar.appendChild(fill);st.append(l,bar);}}
+// garPrevId: the car shown in the preview (hovered or focused card, otherwise the selected car)
+let garPrevId=null;
+function garInfo(){const s=CAR_SPECS.find(q=>q.id===(garPrevId||garage.sel))||selectedSpec();
+  $('gpName').textContent=tr(s.name);$('gpTrait').textContent=s.mxd?tr(s.mxd):'';$('gpTrait').hidden=!s.mxd;carStats($('gpStats'),s);
+  const[t,col]=carTag(s);$('gpTag').textContent=owns(s.id)?t:tr('LÅST')+' · '+t;$('gpTag').style.color=col;}
+function garPreview(id){garPrevId=id;garInfo();}
 function renderGarage(){$('gwc').textContent=fmtScore(wallet);const wrap=$('gcars');wrap.innerHTML='';$('gcount').textContent=garage.owned.length+' / '+CAR_SPECS.length+' '+tr('bilar');
   for(const s of CAR_SPECS){const own=owns(s.id),sel=garage.sel===s.id;
     const b=document.createElement('button');b.type='button';b.className='gcar'+(sel?' sel':'')+(own?'':' locked');b.id='car-'+s.id;
     b.setAttribute('aria-pressed',String(sel));if(!own)b.setAttribute('aria-disabled','true');
     const c2=document.createElement('canvas');c2.width=320;c2.height=160;drawCarPreview(c2,s,!own);b.appendChild(c2);
     const nm=document.createElement('div');nm.className='nm';nm.textContent=tr(s.name);b.appendChild(nm);
-    const st=document.createElement('div');st.className='st';
-    for(const[k,lab]of[['speed',tr('Toppfart')],['acc',tr('Acceleration')],['grip',tr('Väggrepp')],['armor',tr('Pansar')]]){
-      const l=document.createElement('span');l.textContent=lab;const bar=document.createElement('i');const fill=document.createElement('b');
-      fill.style.width=Math.min(100,Math.round(s[k]/STAT_MAX[k]*100))+'%';fill.style.setProperty('--c',s.glow||'#ffd23f');bar.appendChild(fill);st.append(l,bar);}
-    b.appendChild(st);
-    const tg=document.createElement('div');tg.className='tagl';
-    const price=carPrice(s);tg.textContent=sel?tr('Vald'):own?tr('Välj'):s.ach?tr('Klara alla prestationer'):(wallet>=price?trf('Köp för {c} mynt',{c:fmtScore(price)}):trf('Lås upp: {p} p eller {c} mynt',{p:fmtScore(s.req),c:fmtScore(price)}));tg.style.color=sel?'#ffd23f':own?'#7dffa8':s.ach?'#3de0ff':'rgba(242,234,216,.65)';b.appendChild(tg);
+    const tg=document.createElement('div');tg.className='tagl';const[t,col]=carTag(s);tg.textContent=t;tg.style.color=col;b.appendChild(tg);
+    b.addEventListener('mouseenter',()=>garPreview(s.id));b.addEventListener('focus',()=>garPreview(s.id));
     b.addEventListener('click',()=>{if(!own){const price=carPrice(s);if(wallet>=price){wallet-=price;saveWallet();garage.owned.push(s.id);garage.sel=s.id;saveGarage();sfx('key');renderGarage();updateSelLine();const e2=$('car-'+s.id);if(e2)e2.focus();}else sfx('alert');return;}garage.sel=s.id;saveGarage();sfx('click');renderGarage();updateSelLine();$('car-'+s.id).focus();});
-    wrap.appendChild(b);}progRenderGarage();}
+    wrap.appendChild(b);}
+  if(garPrevId&&!CAR_SPECS.some(q=>q.id===garPrevId))garPrevId=null;garInfo();progRenderGarage();}
 function updateSelLine(){const s=selectedSpec();for(const id of['selStart','selOver']){const e=$(id);e.innerHTML='';e.append(tr('Din bil: '));const bb=document.createElement('b');bb.textContent=tr(s.name);e.append(bb,'  ·  '+garage.owned.length+'/'+CAR_SPECS.length+' '+tr('i garaget'));}}
 /* ---------- Menu screens ---------- */
 const SCREENS=['langs','start','howto','settings','pause','over','garage','skins','bpass','ach'];
@@ -4026,7 +4080,7 @@ function showScreen(id,push){const cur=SCREENS.find(s=>!$(s).hidden);if(push&&cu
   setTimeout(()=>{const f=id==='garage'?$('car-'+garage.sel):id==='skins'?$('skin-'+skinId):$(id).querySelector('.mitem');if(f)f.focus();},30);}
 function backScreen(){const prev=screenBack.pop()||(paused?'pause':state==='over'?'over':'start');updateSelLine();showScreen(prev,false);}
 function hideScreens(){for(const s of SCREENS)$(s).hidden=true;screenBack=[];}
-function openGarage(){showScreen('garage',true);}
+function openGarage(){garPrevId=null;showScreen('garage',true);}
 function closeGarage(){updateSelLine();backScreen();}
 function updateStartFoot(){progBadge();if(modeFoot())return;$('bestStart').textContent=best>0?trf('Rekord: {p} p',{p:fmtScore(best)}):tr('Inget rekord än');}
 function pauseGame(){if(state!=='play'||paused)return;paused=true;{const pc=$('pchal');pc.innerHTML='';for(const c of chals){const d=document.createElement('div');d.textContent=(c.done?'✓ ':'· ')+chalText(c)+(c.done?'':'  —  '+chalProg(c)+'  ·  +'+fmtScore(c.rw)+' '+tr('p'));pc.appendChild(d);}}for(const k in keys)keys[k]=false;mouseFire=false;touch.fire=false;showScreen('pause',false);screenBack=[];}
@@ -4036,7 +4090,7 @@ function quitToMenu(){if(state==='play'){updateBP();progAward();}saveBP();paused
   if(MODE==='survival'&&score>best){best=Math.floor(score);try{localStorage.setItem('hh-best',String(best));}catch(e){}}
   modeEnd();state='start';updateStartFoot();updateSelLine();screenBack=[];showScreen('start',false);}
 $('bpStart').addEventListener('click',()=>showScreen('bpass',true));$('bpBack').addEventListener('click',backScreen);
-$('gStart').addEventListener('click',openGarage);$('skStart').addEventListener('click',()=>{previewSkinId=skinId;showScreen('skins',true);});$('skBack').addEventListener('click',backScreen);$('gOver').addEventListener('click',openGarage);$('gback').addEventListener('click',closeGarage);
+$('gStart').addEventListener('click',openGarage);$('skStart').addEventListener('click',()=>{previewSkinId=skinId;showScreen('skins',true);});$('skBack').addEventListener('click',backScreen);$('gOver').addEventListener('click',openGarage);$('gback').addEventListener('click',closeGarage);$('gcars').addEventListener('mouseleave',()=>garPreview(null));
 $('hStart').addEventListener('click',()=>{renderPowLegend();showScreen('howto',true);});
 // The power-up colour list in How to play, grouped by the score tier that unlocks them; the golden key last.
 function renderPowLegend(){const L=$('powLegend');L.innerHTML='';
@@ -4144,6 +4198,34 @@ function renderSkinPreview(){const c2=$('skinView');
   const t=performance.now()/1000;skinModel.rotation.y=t*.7;poseHero(skinModel,{speed:0});
   const lk=!skinOK(SKINS.find(s=>s.id===id));c2.classList.toggle('locked',lk);skinR.render(skinScene,skinCam);}
 
+/* ---------- Garage 3D preview (2.4) ----------
+   Own small renderer like the skins preview. The car is built with the game's buildCar (so it matches what you drive), turns slowly
+   on a lit floor, and is cached per car. A studio environment map is made for this renderer so metal paint has something to reflect. */
+let garR=null,garScene=null,garCam=null,garModel=null,garShown=null;const garCache=new Map();
+function garCar(s){let m=garCache.get(s.id);if(m)return m;
+  const fake={spec:s,kind:'civ',color:s.color,w:s.w,h:s.h,shape:s.shape,van:s.shape==='van'||s.shape==='tank',deco:s.deco||null};
+  m=buildCar(fake);scene.remove(m);const u=m.userData;if(u.door)u.door.rotation.y=0;if(u.cone)u.cone.visible=false;
+  // fit the camera to the car itself (body, glass, wheels), not the long headlight beam or the ground glow
+  const box=new THREE.Box3();m.updateMatrixWorld(true);for(const o of[...u.body,...(u.wheels||[])])box.expandByObject(o);const sz=box.getSize(new THREE.Vector3());m.userData.fit={r:Math.max(sz.x,sz.z)*.5,h:sz.y,y0:box.min.y};
+  garCache.set(s.id,m);return m;}
+function renderGarPreview(){const c2=$('garView');if(!c2)return;
+  if(!garR){garR=new THREE.WebGLRenderer({canvas:c2,alpha:true,antialias:true});garR.setPixelRatio(Math.min(2,window.devicePixelRatio||1));garR.outputEncoding=renderer.outputEncoding;
+    garScene=new THREE.Scene();garScene.add(new THREE.HemisphereLight(0xfff4e8,0x40283a,.75));
+    const dl=new THREE.DirectionalLight(0xffffff,.85);dl.position.set(60,90,50);garScene.add(dl);const rim=new THREE.DirectionalLight(0x9fd8ff,.55);rim.position.set(-70,40,-60);garScene.add(rim);
+    const env=canvasTex(256,128,(g)=>{const gr=g.createLinearGradient(0,0,0,128);gr.addColorStop(0,'#2a2c44');gr.addColorStop(.42,'#8a8494');gr.addColorStop(.5,'#c8c2cc');gr.addColorStop(.58,'#3a3040');gr.addColorStop(1,'#141420');g.fillStyle=gr;g.fillRect(0,0,256,128);
+      g.fillStyle='#ffffff';g.fillRect(40,20,50,10);g.fillRect(160,22,60,8);});
+    env.mapping=THREE.EquirectangularReflectionMapping;const pm=new THREE.PMREMGenerator(garR);garScene.environment=pm.fromEquirectangular(env).texture;pm.dispose();
+    const floor=new THREE.Mesh(new THREE.CircleGeometry(1,48).rotateX(-PI/2),new THREE.MeshBasicMaterial({map:radialTex('rgba(255,243,226,.5)','rgba(255,243,226,0)'),transparent:true,depthWrite:false}));floor.name='floor';garScene.add(floor);
+    garCam=new THREE.PerspectiveCamera(30,4/3,1,2000);}
+  const w=c2.clientWidth,h=c2.clientHeight;if(!w||!h)return;if(c2.width!==Math.round(w*garR.getPixelRatio())){garR.setSize(w,h,false);garCam.aspect=w/h;garCam.updateProjectionMatrix();}
+  const s=CAR_SPECS.find(q=>q.id===(garPrevId||garage.sel))||selectedSpec();
+  if(garShown!==s.id){if(garModel)garScene.remove(garModel);garModel=garCar(s);garScene.add(garModel);garShown=s.id;
+    const f=garModel.userData.fit,d=(f.r*1.25+f.h*.5)/Math.tan(garCam.fov*PI/360)/Math.min(1,garCam.aspect)*.95;
+    garCam.position.set(d*.82,f.h*.5+d*.36,d*.56);garCam.lookAt(0,f.h*.42+f.y0,0);
+    garScene.getObjectByName('floor').scale.set(f.r*1.9,1,f.r*1.9);}
+  const t=performance.now()/1000;garModel.rotation.y=t*.55;
+  c2.classList.toggle('locked',!owns(s.id));garR.render(garScene,garCam);}
+
 /* === GAME MODES (ui + render) === */
 // Start-screen button: cycles the mode and shows its description. Also refreshes the record line.
 function modeFoot(){const b=$('modeStart');if(!b)return false;
@@ -4205,7 +4287,7 @@ function lerpOut(){const S=lerpSaved;for(let i=S.length-5;i>=0;i-=5){const o=S[i
 let acc=0,last=performance.now();
 function frame(now){const rdt=Math.min(.1,(now-last)/1000);autoQuality(rdt);acc=paused?0:Math.min(DT*4,acc+rdt*(slowT>0?.35:1));if(slowT>0)slowT-=rdt;last=now;
   while(acc>=DT){snapPrev();tick();acc-=DT;for(const k in pressed)delete pressed[k];touch.actP=false;touch.enterP=false;touch.swapP=false;}
-  lerpIn(paused?1:acc/DT);updateCamera(rdt*60);syncScene();lerpOut();vfxUpdate(paused?0:rdt);syncPowerups();syncCombat();lwFrame();syncMode();syncProps();audioUpdate();if(!$('skins').hidden)renderSkinPreview();renderFrame();renderMini();renderModeMini();renderHud();renderModeHud();tutRender();bustRender();requestAnimationFrame(frame);}
+  lerpIn(paused?1:acc/DT);updateCamera(rdt*60);syncScene();lerpOut();vfxUpdate(paused?0:rdt);syncPowerups();syncCombat();lwFrame();syncMode();syncProps();audioUpdate();if(!$('skins').hidden)renderSkinPreview();if(!$('garage').hidden)renderGarPreview();renderFrame();renderMini();renderModeMini();renderHud();renderModeHud();tutRender();bustRender();requestAnimationFrame(frame);}
 /* === REWARD FX ===========================================================
    Reward animations. DOM + CSS + Web Animations only, no extra 3D cost.
    Public API (screen pixel coordinates, all safe to call at any time):

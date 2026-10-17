@@ -1,6 +1,6 @@
 # Handoff: Crash City (formerly "Harbor Heat")
 
-Current version: **2.3** (2026-10-16): 2.2 + a two-stage helicopter, the Legend X car and Legend skin for every achievement, one colour per power-up (with a list in How to play) and far more repairs. 2.0 (CrazyGames submission #1) was rejected for overall quality; 2.1/2.2 are resubmission candidates. 1.8 and 1.9 were made by another agent and pushed as GitHub user `vilmerfrost`; this file only covers the parts of them that later work touched, so read the code and the `tools/sim*.js` headers for the rest. Everything below is what a new agent needs to continue without re-reading the old conversation.
+Current version: **2.4** (2026-10-17): 2.3 + a more realistic drift and a garage with a 3D preview of each car (Done button under it). 2.3: two-stage helicopter, the Legend X car and Legend skin for every achievement, one colour per power-up (with a list in How to play) and far more repairs. 2.0 (CrazyGames submission #1) was rejected for overall quality; 2.1/2.2 are resubmission candidates. 1.8 and 1.9 were made by another agent and pushed as GitHub user `vilmerfrost`; this file only covers the parts of them that later work touched, so read the code and the `tools/sim*.js` headers for the rest. Everything below is what a new agent needs to continue without re-reading the old conversation.
 
 Repo: `https://github.com/caesarlynch0912-hue/crash-city`. `main` holds the game (`index.html`) plus these notes and tools. The `claude-handoff` branch is the original 1.4 handoff snapshot (older game copies, Electron stub); it is history now and not needed for new work.
 
@@ -36,6 +36,12 @@ Repo: `https://github.com/caesarlynch0912-hue/crash-city`. `main` holds the game
   - How to play: the tier list is replaced by `#powLegend` (`renderPowLegend()`, rebuilt each time the screen opens, so it follows the language), grouped by tier, golden key under "Special".
   - Coins: `coinKeep()` tops the trails back up to `COIN_TRAILS` 36 once a second (about 0.4 % of replacements failed and a long run slowly lost trails).
   - New test: `tools/simreward.js` (helicopter levels and damage, colours, repair share, Legend unlock rules).
+- **2.4** (2026-10-17, user, in English: "Fix the drift and make it a bit more realistic. And in the garage make a preview of every car on the right and done button under it so its easier to find"):
+  - Measured before: a drift *gained* speed (78 → 92 km/h in 1.5 s), spun 342° in 1.5 s at a fixed 58° angle, and snapped from 58° to straight in ~0.15 s when Space was let go; drift points and smoke only needed Space + steering, not a real slide.
+  - Drift model in `drive()` (player car only; AI cars unchanged, `c.ma=c.a`): the nose has a yaw rate `c.yr` with some weight (`.16` response while drifting, `.6` otherwise), the travel direction `c.ma` follows the nose at `DRIFT_FOLLOW` (on throttle) / `DRIFT_FOLLOW_OFF` scaled by `grip^1.5`, so the slide settles where the two meet (~35° for grip 1, ~26° grippy, ~39° heavy), capped at `DRIFT_MAX_SLIP`. `DRIFT_KICK` flicks the car in on the first drift tick, counter-steer bites `DRIFT_COUNTER` harder (you can flick from one side to the other), the slide scrubs speed by `DRIFT_SCRUB*sin²(slip)` and engine push is multiplied by `cos(slip)` (a 1.5 s drift: 80 → 66 km/h). After Space is let go grip returns over `DRIFT_EXIT` 0.5 s (≈0.25 s to under 5°, max ~3° change per tick). Drift starts above `DRIFT_MIN_V` (~54 km/h) and keeps going down to `DRIFT_KEEP_V` (~35 km/h). Normal cornering is unchanged (3.7° slip, 168° in 1.5 s).
+  - `carSlip(c)` / `isSliding(c)` (real slide: >~10°, moving, on the ground) drive drift points, tyre smoke (more at bigger angles), the tutorial drift step, front wheels that point into the slide, and the camera, which now looks between nose and travel direction (`pc.a - slip*.55`) so you see the car side-on. Taking a car resets its slide state (`player.lastCar`).
+  - Garage: `.garlay` grid, car cards (thumbnail, name, status) on the left with the upgrades panel `#gup` under them; on the right a sticky `.gside` with `#garView` (own WebGLRenderer like the skins preview, studio env map, cars from the game's `buildCar` cached in `garCache`, camera fitted to the body), name, trait, stat bars and status, and **Done** directly under it. Hover/focus a card to preview it, leaving the list goes back to the selected car (`garPrevId`, `garPreview`, `garInfo`, `carTag`, `carStats`). Locked cars show in colour, slightly dimmed, with "LOCKED · how to unlock". Below 760 px the panel goes on top.
+  - New test: `tools/simdrift.js`.
 - They also work on a second Windows 11 PC (user `caesa`), where the repo lives at `C:\Users\caesa\Projects\crash-city`.
 - The user has not asked to publish code anywhere beyond this GitHub repo.
 
@@ -52,6 +58,7 @@ Repo: `https://github.com/caesarlynch0912-hue/crash-city`. `main` holds the game
 | `tools/sim9.js` | Car-jack phase test + challenge completion test. |
 | `tools/simcoins.js` | Coins on the centre line, off ramps and the highway, jump trails collectable at the design speed, trails replaced not lost. |
 | `tools/simstreet.js` | No city traffic on the highway, highway lanes, traffic/parked variety, parked cars clear of walls and roads, police contact keeps speed. |
+| `tools/simdrift.js` | Drift: steady angle, speed loss, counter-steer flick, smooth grip return, normal cornering unchanged, grip changes the angle, drift points only from real slides, start/keep speeds. |
 | `tools/simreward.js` | Patrol vs attack helicopter, unique power-up colours, repair share, Legend X / Legend skin only for every achievement. |
 | `tools/simtut.js` | Tutorial test: no police during it, every step completes from real input, saved as seen, Enter skips, replay works. Exits 1 on failure. |
 | `tools/simbp.js` | Battle Pass test (lock/unlock at 10 000, tier rewards, reload persistence, old-record unlock) + Space-drift/Shift-nitro check. Exits 1 on any failure. |
@@ -104,7 +111,7 @@ localStorage keys: `hh-lang, hh-best, hh-garage, hh-coins, hh-stats, hh-skin, hh
 - Pricedown was replaced by **Passion One 900** (OFL, Google Fonts) on 2026-10-15: Pricedown's free licence does not allow embedding in games or websites, and a game licence has no public price. The user chose the free look-alike. Do not bring Pricedown back.
 - Possible offline build: inline three.js (~600 KB) so no CDN is needed.
 
-- Version label: `const VERSION` and the start-screen footer (now 2.3); bump both together.
+- Version label: `const VERSION` and the start-screen footer (now 2.4); bump both together.
 - On this PC the localhost:5177 save already finished the pass (tier 12) before the rebalance. Ask the user whether to reset it so they can play the harder pass; do not reset without a yes.
 - Battle Pass ideas if asked: a HUD progress chip during runs, a season 2 with new skins, cars as rewards. Gold (metal) skins look dark in the Skins preview because that scene has no environment map; Guldkalven has the same issue.
 - On this PC the localhost:5177 save has best 10 429, so the pass is already open there (tier 0).
